@@ -11,7 +11,7 @@ namespace SavageExpenseTracker.Application.Helpers
             {
                 Id = user.Id,
                 Email = user.Email,
-                Username = user.Username,
+                UserName = user.UserName,
                 HourlyRate = user.HourlyRate,
                 CreatedAt = user.CreatedAt
             };

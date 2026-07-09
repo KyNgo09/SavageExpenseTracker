@@ -63,7 +63,7 @@ namespace SavageExpenseTracker.Application.Services
             {
                 Id = Guid.NewGuid(),
                 Email = createUserDto.Email,
-                Username = createUserDto.Username,
+                UserName = createUserDto.UserName,
                 PasswordHash = passwordHash,
                 HourlyRate = createUserDto.HourlyRate,
                 CreatedAt = DateTime.UtcNow
@@ -78,7 +78,7 @@ namespace SavageExpenseTracker.Application.Services
             var user = await _userRepository.GetByIdAsync(id);
             if (user == null) return false;
 
-            user.Username = updateUserDto.Username;
+            user.UserName = updateUserDto.UserName;
             user.HourlyRate = updateUserDto.HourlyRate;
 
             await _userRepository.UpdateAsync(user);

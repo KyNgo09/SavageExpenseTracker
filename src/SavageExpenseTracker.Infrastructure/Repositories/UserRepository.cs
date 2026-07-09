@@ -34,7 +34,7 @@ namespace SavageExpenseTracker.Infrastructure.userRepository
 
         public async Task<User?> GetByUserNameAsync(string username)
         {
-            return await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+            return await _context.Users.FirstOrDefaultAsync(u => u.UserName == username);
         }
 
         public async Task AddAsync(User user)
