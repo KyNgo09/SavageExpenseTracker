@@ -29,12 +29,12 @@ namespace SavageExpenseTracker.Infrastructure.userRepository
 
         public async Task<User?> GetByEmailAsync(string email)
         {
-            return await _context.Users.FirstOfDefaultAsync(u => u.Email == email);
+            return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
         }
 
-        public async Taskk<User?> GetByUserNameAsync(string name)
+        public async Task<User?> GetByUserNameAsync(string username)
         {
-            return await _context.Users.FirstOfDefaultAsync(u => u.UserName == name);
+            return await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
         }
 
         public async Task AddAsync(User user)
@@ -45,7 +45,6 @@ namespace SavageExpenseTracker.Infrastructure.userRepository
 
         public async Task UpdateAsync(User user)
         {
-            _context.Entry(user).State = EntityState.Modified;
             await _context.SaveChangesAsync();
         }
 
@@ -62,11 +61,6 @@ namespace SavageExpenseTracker.Infrastructure.userRepository
         public async Task<bool> EmailExistsAsync(string email)
         {
             return await _context.Users.AnyAsync(u => u.Email == email);
-        }
-
-        public async Task<bool> UserNameExistsAsync(string username)
-        {
-            return await _context.Users.AnyAsync(u => u.Username == username);
         }
     }
 }

@@ -1,0 +1,29 @@
+## Environment files
+.env
+.env.*
+.env.local
+
+## Build and Output folders
+[Bb]in/
+[Oo]bj/
+**/bin/
+**/obj/
+
+## Visual Studio cache and settings
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## VS Code settings and workspace
+.vscode/
+
+## Rider and IntelliJ
+.idea/
+
+## OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+[Dd]esktop.ini
