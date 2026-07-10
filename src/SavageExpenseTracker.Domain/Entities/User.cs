@@ -10,5 +10,7 @@ namespace SavageExpenseTracker.Domain.Entities
         public string PasswordHash { get; set; } = string.Empty;
         public decimal HourlyRate { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public ICollection<Expense>? Expenses { get; set; }
     }
 }

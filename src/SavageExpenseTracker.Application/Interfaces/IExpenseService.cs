@@ -1,0 +1,16 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using SavageExpenseTracker.Application.Dtos.Expense;
+
+namespace SavageExpenseTracker.Application.Interfaces
+{
+    public interface IExpenseService
+    {
+        Task<IEnumerable<ExpenseDto>> GetUserExpensesAsync(Guid userId);
+        Task<ExpenseDto?> GetExpenseByIdAsync(long id);
+        Task<ExpenseDto> CreateExpenseAsync(CreateExpenseDto createExpenseDto);
+        Task<bool> UpdateExpenseAsync(long id, UpdateExpenseDto updateExpenseDto);
+        Task<bool> DeleteExpenseAsync(long id);
+    }
+}

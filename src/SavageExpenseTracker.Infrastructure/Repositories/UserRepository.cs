@@ -6,7 +6,7 @@ using SavageExpenseTracker.Application.Interfaces;
 using SavageExpenseTracker.Domain.Entities;
 using SavageExpenseTracker.Infrastructure.Data;
 
-namespace SavageExpenseTracker.Infrastructure.userRepository
+namespace SavageExpenseTracker.Infrastructure.UserRepository
 {
     public class UserRepository : IUserRepository
     {

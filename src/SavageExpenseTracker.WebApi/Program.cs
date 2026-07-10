@@ -36,8 +36,11 @@ builder.Services.AddDbContext<SavageExpenseTrackerDbContext>(options =>
 
 // Register repository
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IExpenseRepository, ExpenseRepository>();
+
 // Register service
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IExpenseService, ExpenseService>();
 
 var app = builder.Build();
 
