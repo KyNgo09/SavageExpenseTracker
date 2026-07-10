@@ -4,5 +4,6 @@ namespace SavageExpenseTracker.Application.Dtos.Expense
     {
         public string? Description { get; set; }
         public decimal Amount { get; set; }
+        public long CategoryId { get; set; }
     }
 }

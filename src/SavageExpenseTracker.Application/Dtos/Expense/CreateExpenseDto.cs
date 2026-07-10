@@ -7,6 +7,7 @@ namespace SavageExpenseTracker.Application.Dtos.Expense
         public Guid UserId { get; set; }
         public string? Description { get; set; }
         public decimal Amount { get; set; }
+        public long CategoryId { get; set; }
        // ImageUrl, SavageComment and TimeWork will be processed automatically
     }
 }

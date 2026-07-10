@@ -22,8 +22,8 @@ namespace SavageExpenseTracker.Application.Services
 
         public async Task<IEnumerable<ExpenseDto>> GetUserExpensesAsync(Guid userId)
         {
-            var expense = await _expenseRepository.GetByUserIdAsync(userId);
-            return expense.Select(e => e.ToDto());
+            var expenses = await _expenseRepository.GetByUserIdAsync(userId);
+            return expenses.Select(e => e.ToDto());
         }
 
         public async Task<ExpenseDto?> GetExpenseByIdAsync(long id)
@@ -48,7 +48,8 @@ namespace SavageExpenseTracker.Application.Services
                 Amount = createExpenseDto.Amount,
                 TimeWork = timeWork,
                 CreatedAt = DateTime.UtcNow,
-                AppliedHourlyRate = user.HourlyRate
+                AppliedHourlyRate = user.HourlyRate,
+                CategoryId = createExpenseDto.CategoryId
             };
 
             await _expenseRepository.AddAsync(expense);
@@ -65,6 +66,7 @@ namespace SavageExpenseTracker.Application.Services
             expense.Description = updateExpenseDto.Description;
             expense.Amount = updateExpenseDto.Amount;
             expense.TimeWork = timeWork;
+            expense.CategoryId = updateExpenseDto.CategoryId;
             
             // Do not assign ImageUrl and SavageComment from dto because client-side modifications via this API are not allowed.
             await _expenseRepository.UpdateAsync(expense);

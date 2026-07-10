@@ -13,7 +13,9 @@ namespace SavageExpenseTracker.Domain.Entities
         public string? SavageComment { get; set; }
         public DateTime CreatedAt { get; set; }
         public decimal AppliedHourlyRate { get; set; }
+        public long CategoryId { get; set; } // ForeignKey to Category
 
-        public User? User { get; set; }
+        public User? User { get; set; } // Navigation property
+        public Category? Category { get; set; } // Navigation property
     }
 }

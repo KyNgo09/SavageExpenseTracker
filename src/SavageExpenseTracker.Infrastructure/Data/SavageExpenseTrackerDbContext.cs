@@ -13,6 +13,7 @@ namespace SavageExpenseTracker.Infrastructure.Data
         // Định nghĩa DbSet cho bảng Users
         public DbSet<User> Users => Set<User>();
         public DbSet<Expense> Expenses => Set<Expense>();
+        public DbSet<Category> Categories => Set<Category>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -49,11 +50,27 @@ namespace SavageExpenseTracker.Infrastructure.Data
                 entity.Property(e => e.SavageComment).HasColumnName("savage_comment").HasMaxLength(255);
                 entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
                 entity.Property(e => e.AppliedHourlyRate).HasColumnName("applied_hourly_rate").HasPrecision(18, 2).IsRequired();
+                entity.Property(e => e.CategoryId).HasColumnName("category_id").IsRequired();
                 // Relationships
                 entity.HasOne(e => e.User)
                     .WithMany(u => u.Expenses)
                     .HasForeignKey(e => e.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Category)
+                    .WithMany(c => c.Expenses)
+                    .HasForeignKey(e => e.CategoryId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<Category>(entity => 
+            {
+                entity.ToTable("categories");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+                entity.Property(e => e.Name).HasColumnName("name").IsRequired().HasMaxLength(100);
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
+                entity.HasIndex(e => e.Name).IsUnique();
             });
         }
     }

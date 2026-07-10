@@ -72,7 +72,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
             var result = await _expenseService.DeleteExpenseAsync(id);
             if (!result)
             {
-                return NotFound(new { Message = $"Không tìm thấy chi tiêu với ID: {id}" });
+                return NotFound(new { Message = $"Can't find Expense with Id: {id}" });
             }
             return NoContent();
         }
