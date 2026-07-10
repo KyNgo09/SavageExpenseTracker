@@ -7,7 +7,7 @@ using SavageExpenseTracker.Application.Interfaces;
 using SavageExpenseTracker.Domain.Entities;
 using SavageExpenseTracker.Infrastructure.Data;
 
-namespace SavageExpenseTracker.Infrastructure.ExpenseRepository
+namespace SavageExpenseTracker.Infrastructure.Repositories
 {
     public class ExpenseRepository : IExpenseRepository
     {

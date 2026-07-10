@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SavageExpenseTracker.Infrastructure.Data;
 using SavageExpenseTracker.Application.Interfaces;
 using SavageExpenseTracker.Application.Services;
-using SavageExpenseTracker.Infrastructure.userRepository;
+using SavageExpenseTracker.Infrastructure.Repositories;
 
 var currentDir = Directory.GetCurrentDirectory();
 while (currentDir != null && !File.Exists(Path.Combine(currentDir, ".env")))

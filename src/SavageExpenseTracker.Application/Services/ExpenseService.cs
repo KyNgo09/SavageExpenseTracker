@@ -9,7 +9,7 @@ using SavageExpenseTracker.Domain.Entities;
 
 namespace SavageExpenseTracker.Application.Services
 {
-    public class ExpenseService : IExpenService
+    public class ExpenseService : IExpenseService
     {
         private readonly IExpenseRepository _expenseRepository;
         private readonly IUserRepository _userRepository;
@@ -47,7 +47,7 @@ namespace SavageExpenseTracker.Application.Services
                 Description = createExpenseDto.Description,
                 Amount = createExpenseDto.Amount,
                 TimeWork = timeWork,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
                 AppliedHourlyRate = user.HourlyRate
             };
 
