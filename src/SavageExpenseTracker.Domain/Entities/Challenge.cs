@@ -13,7 +13,7 @@ namespace SavageExpenseTracker.Domain.Entities
         public Guid? LoserId { get; set; }
         public DateTime CreatedAt { get; set; }
 
-        //Navigation properties
+        // Navigation properties
         public User? Winner { get; set; }
         public User? Loser { get; set; }
         public ICollection<ChallengeMember> ChallengeMembers { get; set; } = new List<ChallengeMember>();

@@ -14,6 +14,8 @@ namespace SavageExpenseTracker.Infrastructure.Data
         public DbSet<User> Users => Set<User>();
         public DbSet<Expense> Expenses => Set<Expense>();
         public DbSet<Category> Categories => Set<Category>();
+        public DbSet<Challenge> Challenges => Set<Challenge>();
+        public DbSet<ChallengeMember> ChallengeMembers => Set<ChallengeMember>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -71,6 +73,47 @@ namespace SavageExpenseTracker.Infrastructure.Data
                 entity.Property(e => e.Name).HasColumnName("name").IsRequired().HasMaxLength(100);
                 entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
                 entity.HasIndex(e => e.Name).IsUnique();
+            });
+
+            modelBuilder.Entity<Challenge>(entity => 
+            {
+                entity.ToTable("challenges");
+                entity.HasKey(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+                entity.Property(e => e.Name).HasColumnName("name").IsRequired().HasMaxLength(255);
+                entity.Property(e => e.DateStart).HasColumnName("date_start").IsRequired();
+                entity.Property(e => e.DateEnd).HasColumnName("date_end").IsRequired();
+                entity.Property(e => e.WinnerId).HasColumnName("winner_id");
+                entity.Property(e => e.LoserId).HasColumnName("loser_id");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
+
+                entity.HasOne(e => e.Winner)
+                    .WithMany()
+                    .HasForeignKey(e => e.WinnerId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasOne(e => e.Loser)
+                    .WithMany()
+                    .HasForeignKey(e => e.LoserId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            modelBuilder.Entity<ChallengeMember>(entity => 
+            {
+                entity.ToTable("challenge_members");
+                entity.HasKey(e => new {e.ChallengeId, e.UserId });
+                entity.Property(e => e.ChallengeId).HasColumnName("challenge_id");
+                entity.Property(e => UserId).HasColumnName("user_id");
+                entity.Property(e => e.JoinedAt).HasColumnName("joined_at").HasDefaultValueSql("NOW()");
+
+                entity.HasOne(e => e.Challenge)
+                    .WithMany(c => c.ChallengeMembers)
+                    .HasForeignKey(e => e.ChallengeId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }
