@@ -11,8 +11,10 @@ namespace SavageExpenseTracker.Infrastructure.Repositories
     {
         private readonly SavageExpenseTrackerDbContext _context;
 
-        public CategoryRepository(SavageExpenseTrackerDbContext context) =>
+        public CategoryRepository(SavageExpenseTrackerDbContext context)
+        {
             _context = context;
+        }
 
         public async Task<IEnumerable<Category>> GetAllAsync()
         {

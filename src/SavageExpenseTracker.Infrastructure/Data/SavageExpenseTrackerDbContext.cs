@@ -78,7 +78,8 @@ namespace SavageExpenseTracker.Infrastructure.Data
             modelBuilder.Entity<Challenge>(entity => 
             {
                 entity.ToTable("challenges");
-                entity.HasKey(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
                 entity.Property(e => e.Name).HasColumnName("name").IsRequired().HasMaxLength(255);
                 entity.Property(e => e.DateStart).HasColumnName("date_start").IsRequired();
                 entity.Property(e => e.DateEnd).HasColumnName("date_end").IsRequired();
@@ -102,7 +103,7 @@ namespace SavageExpenseTracker.Infrastructure.Data
                 entity.ToTable("challenge_members");
                 entity.HasKey(e => new {e.ChallengeId, e.UserId });
                 entity.Property(e => e.ChallengeId).HasColumnName("challenge_id");
-                entity.Property(e => UserId).HasColumnName("user_id");
+                entity.Property(e => e.UserId).HasColumnName("user_id");
                 entity.Property(e => e.JoinedAt).HasColumnName("joined_at").HasDefaultValueSql("NOW()");
 
                 entity.HasOne(e => e.Challenge)

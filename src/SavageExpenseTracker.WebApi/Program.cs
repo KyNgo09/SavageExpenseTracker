@@ -3,6 +3,9 @@ using SavageExpenseTracker.Infrastructure.Data;
 using SavageExpenseTracker.Application.Interfaces;
 using SavageExpenseTracker.Application.Services;
 using SavageExpenseTracker.Infrastructure.Repositories;
+using SavageExpenseTracker.WebApi.HostedServices;
+using SavageExpenseTracker.WebApi.Services;
+using SavageExpenseTracker.WebApi.Hubs;
 
 var currentDir = Directory.GetCurrentDirectory();
 while (currentDir != null && !File.Exists(Path.Combine(currentDir, ".env")))
@@ -35,14 +38,19 @@ builder.Services.AddDbContext<SavageExpenseTrackerDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 // Register repository
+builder.Services.AddSignalR();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IExpenseRepository, ExpenseRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<IChallengeRepository, ChallengeRepository>();
 
 // Register service
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IExpenseService, ExpenseService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IChallengeService, ChallengeService>();
+builder.Services.AddScoped<IChallengeNotificationService, ChallengeNotificationService>();
+builder.Services.AddHostedService<ChallengeClosingJob>();
 
 var app = builder.Build();
 
@@ -56,5 +64,6 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.MapControllers();
+app.MapHub<ChallengeHub>("/challengeHub");
 
 app.Run();

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SavageExpenseTracker.Application.Interfaces;
@@ -44,7 +45,7 @@ namespace SavageExpenseTracker.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task RemovemMemberAsync(ChallengeMembers member)
+        public async Task RemovemMemberAsync(ChallengeMember member)
         {
             _context.ChallengeMembers.Remove(member);
             await _context.SaveChangesAsync();

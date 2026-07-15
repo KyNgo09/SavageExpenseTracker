@@ -266,6 +266,22 @@ namespace SavageExpenseTracker.Application.Interfaces
 }
 ```
 
+### `Interfaces/IChallengeNotificationService.cs`
+```csharp
+using System;
+using System.Threading.Tasks;
+
+namespace SavageExpenseTracker.Application.Interfaces
+{
+    public interface IChallengeNotificationService
+    {
+        Task NotifyUserJoinedAsync(long challengeId, Guid userId);
+        Task NotifyUserLeftAsync(long challengeId, Guid userId);
+        Task NotifyChallengeEndedAsync(long challengeId, Guid winnerId, Guid loserId);
+    }
+}
+```
+
 ---
 
 ## 4. SignalR & WebApi Layer (`src/SavageExpenseTracker.WebApi`)
@@ -308,6 +324,7 @@ namespace SavageExpenseTracker.WebApi.Hubs
 builder.Services.AddSignalR();
 builder.Services.AddScoped<IChallengeRepository, ChallengeRepository>();
 builder.Services.AddScoped<IChallengeService, ChallengeService>();
+builder.Services.AddScoped<IChallengeNotificationService, ChallengeNotificationService>();
 builder.Services.AddHostedService<ChallengeClosingJob>(); // Job chạy ngầm
 
 // Đăng ký Endpoint SignalR (sau app.MapControllers();)
@@ -420,4 +437,203 @@ namespace SavageExpenseTracker.WebApi.Controllers
 }
 ```
 
-*(Lưu ý: Logic tính chi tiết Leaderboard và Gửi Notification SignalR sẽ được bạn cài đặt bên trong file `ChallengeService.cs` thông qua interface `IHubContext<ChallengeHub>`).*
+*(Lưu ý: Logic Gửi Notification SignalR đã được tách ra dùng Dependency Inversion qua `IChallengeNotificationService` nhằm bảo đảm Clean Architecture).*
+
+### 4.6. Cài đặt ChallengeNotificationService (`Services/ChallengeNotificationService.cs`)
+```csharp
+using System;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR;
+using SavageExpenseTracker.Application.Interfaces;
+using SavageExpenseTracker.WebApi.Hubs;
+
+namespace SavageExpenseTracker.WebApi.Services
+{
+    public class ChallengeNotificationService : IChallengeNotificationService
+    {
+        private readonly IHubContext<ChallengeHub> _hubContext;
+
+        public ChallengeNotificationService(IHubContext<ChallengeHub> hubContext)
+        {
+            _hubContext = hubContext;
+        }
+
+        public async Task NotifyUserJoinedAsync(long challengeId, Guid userId)
+        {
+            await _hubContext.Clients.Group($"Challenge_{challengeId}").SendAsync("UserJoined", userId);
+        }
+
+        public async Task NotifyUserLeftAsync(long challengeId, Guid userId)
+        {
+            await _hubContext.Clients.Group($"Challenge_{challengeId}").SendAsync("UserLeft", userId);
+        }
+
+        public async Task NotifyChallengeEndedAsync(long challengeId, Guid winnerId, Guid loserId)
+        {
+            await _hubContext.Clients.Group($"Challenge_{challengeId}").SendAsync("ChallengeEnded", new { Winner = winnerId, Loser = loserId });
+        }
+    }
+}
+```
+
+---
+
+## 5. Cài đặt ChallengeService (`src/SavageExpenseTracker.Application/Services`)
+
+Dưới đây là phần code bổ sung cho `ChallengeService.cs` nhằm hoàn thiện toàn bộ tính năng.
+
+### `ChallengeService.cs`
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using SavageExpenseTracker.Application.Dtos.Challenge;
+using SavageExpenseTracker.Application.Interfaces;
+using SavageExpenseTracker.Domain.Entities;
+
+namespace SavageExpenseTracker.Application.Services
+{
+    public class ChallengeService : IChallengeService
+    {
+        private readonly IChallengeRepository _challengeRepository;
+        private readonly IExpenseRepository _expenseRepository;
+        private readonly IChallengeNotificationService _notificationService;
+
+        public ChallengeService(
+            IChallengeRepository challengeRepository,
+            IExpenseRepository expenseRepository,
+            IChallengeNotificationService notificationService
+        )
+        {
+            _challengeRepository = challengeRepository;
+            _expenseRepository = expenseRepository;
+            _notificationService = notificationService;
+        }
+
+        public async Task<ChallengeDto> CreateChallengeAsync(CreateChallengeDto dto)
+        {
+            var challenge = new Challenge
+            {
+                Name = dto.Name,
+                DateStart = dto.DateStart.ToUniversalTime(),
+                DateEnd = dto.DateEnd.ToUniversalTime(),
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _challengeRepository.AddAsync(challenge);
+
+            return MapToDto(challenge);
+        }
+
+        public async Task<bool> JoinChallengeAsync(long challengeId, Guid userId)
+        {
+            var challenge = await _challengeRepository.GetByIdAsync(challengeId);
+            if (challenge == null) return false;
+            
+            if (DateTime.UtcNow > challenge.DateEnd) 
+                throw new InvalidOperationException("Thử thách đã kết thúc.");
+            
+            if (challenge.ChallengeMembers.Any(m => m.UserId == userId))
+                throw new InvalidOperationException("User đã ở trong thử thách này.");
+
+            var member = new ChallengeMember
+            {
+                ChallengeId = challengeId,
+                UserId = userId,
+                JoinedAt = DateTime.UtcNow
+            };
+
+            await _challengeRepository.AddMemberAsync(member);
+            
+            // Gửi Notification
+            await _notificationService.NotifyUserJoinedAsync(challengeId, userId);
+
+            return true;
+        }
+
+        public async Task<bool> LeaveChallengeAsync(long challengeId, Guid userId)
+        {
+            var challenge = await _challengeRepository.GetByIdAsync(challengeId);
+            if (challenge == null) return false;
+
+            var member = challenge.ChallengeMembers.FirstOrDefault(m => m.UserId == userId);
+            if (member == null) return false;
+
+            await _challengeRepository.RemoveMemberAsync(member);
+            
+            // Gửi Notification
+            await _notificationService.NotifyUserLeftAsync(challengeId, userId);
+
+            return true;
+        }
+
+        public async Task<IEnumerable<LeaderboardItemDto>> GetLeaderboardAsync(long challengeId)
+        {
+            var challenge = await _challengeRepository.GetByIdAsync(challengeId);
+            if (challenge == null) return new List<LeaderboardItemDto>();
+
+            var leaderboard = new List<LeaderboardItemDto>();
+
+            foreach (var member in challenge.ChallengeMembers)
+            {
+                var expenses = await _expenseRepository.GetByUserIdAsync(member.UserId);
+                
+                // Lọc Expense nằm trong khoảng thời gian của thử thách
+                var validExpenses = expenses.Where(e => e.CreatedAt >= challenge.DateStart && e.CreatedAt <= challenge.DateEnd).ToList();
+                
+                var totalAmount = validExpenses.Sum(e => e.Amount);
+                var totalTimeWork = validExpenses.Sum(e => e.TimeWork);
+
+                leaderboard.Add(new LeaderboardItemDto
+                {
+                    UserId = member.UserId,
+                    TotalAmount = totalAmount,
+                    TotalTimeWork = totalTimeWork,
+                    Title = totalAmount > 5000000 ? "Báo Thủ" : (totalAmount < 1000000 ? "Thánh Sinh Tồn" : "")
+                });
+            }
+
+            return leaderboard.OrderBy(x => x.TotalAmount); // Sắp xếp theo số tiền (ai tiêu ít thì top 1)
+        }
+
+        public async Task ProcessFinishedChallengesAsync()
+        {
+            var finishedChallenges = await _challengeRepository.GetUnprocessedFinishedChallengesAsync();
+
+            foreach (var challenge in finishedChallenges)
+            {
+                if (challenge.ChallengeMembers.Count > 0)
+                {
+                    var leaderboard = await GetLeaderboardAsync(challenge.Id);
+                    
+                    var winner = leaderboard.OrderBy(l => l.TotalAmount).First();
+                    var loser = leaderboard.OrderByDescending(l => l.TotalAmount).First();
+
+                    challenge.WinnerId = winner.UserId;
+                    challenge.LoserId = loser.UserId;
+
+                    await _challengeRepository.UpdateAsync(challenge);
+                    
+                    // Gửi thông báo kết thúc
+                    await _notificationService.NotifyChallengeEndedAsync(challenge.Id, winner.UserId, loser.UserId);
+                }
+            }
+        }
+
+        private ChallengeDto MapToDto(Challenge challenge)
+        {
+            return new ChallengeDto
+            {
+                Id = challenge.Id,
+                Name = challenge.Name,
+                DateStart = challenge.DateStart,
+                DateEnd = challenge.DateEnd,
+                WinnerId = challenge.WinnerId,
+                LoserId = challenge.LoserId,
+                // Status property is calculated in Dto
+            };
+        }
+    }
+}
+```
