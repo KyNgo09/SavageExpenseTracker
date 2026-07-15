@@ -16,6 +16,7 @@ namespace SavageExpenseTracker.Infrastructure.Data
         public DbSet<Category> Categories => Set<Category>();
         public DbSet<Challenge> Challenges => Set<Challenge>();
         public DbSet<ChallengeMember> ChallengeMembers => Set<ChallengeMember>();
+        public DbSet<Friendship> Friendships => Set<Friendship>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -114,6 +115,27 @@ namespace SavageExpenseTracker.Infrastructure.Data
                 entity.HasOne(e => e.User)
                     .WithMany()
                     .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<Friendship>(entity => 
+            {
+                entity.ToTable("friendships");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+                entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+                entity.Property(e => e.FriendId).HasColumnName("friend_id").IsRequired();
+                entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20);
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
+
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Friend)
+                    .WithMany()
+                    .HasForeignKey(e => e.FriendId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
         }
