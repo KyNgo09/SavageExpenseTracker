@@ -43,6 +43,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IExpenseRepository, ExpenseRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IChallengeRepository, ChallengeRepository>();
+builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
 
 // Register service
 builder.Services.AddScoped<IUserService, UserService>();
@@ -51,6 +52,7 @@ builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IChallengeService, ChallengeService>();
 builder.Services.AddScoped<IChallengeNotificationService, ChallengeNotificationService>();
 builder.Services.AddHostedService<ChallengeClosingJob>();
+builder.Services.AddScoped<IFriendshipService, FriendshipService>();
 
 var app = builder.Build();
 

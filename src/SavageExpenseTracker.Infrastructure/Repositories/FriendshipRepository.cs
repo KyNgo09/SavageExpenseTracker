@@ -49,7 +49,7 @@ namespace SavageExpenseTracker.Infrastructure.Repositories
             return await _context.Friendships.Include(f => f.User).Include(f => f.Friend).Where(f => f.Status == "accepted" && (f.UserId == userId || f.FriendId == userId)).ToListAsync();
         }
 
-        public async Task<IEnumerable<Friendship>> GetPendingRequestAsync(Guid userId)
+        public async Task<IEnumerable<Friendship>> GetPendingRequestsAsync(Guid userId)
         {
             return await _context.Friendships.Include(f => f.User).Where(f => f.FriendId == userId && f.Status == "pending").ToListAsync();
         }
