@@ -12,5 +12,12 @@ namespace SavageExpenseTracker.Domain.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public ICollection<Expense>? Expenses { get; set; }
+
+        // Auth
+        public string Role { get; set; } = "User";
+
+        // Refersh Token
+        public string? RefreshToken { get; set; }
+        public DateTime? RefreshTokenExpiryDate { get; set; }
     }
 }
