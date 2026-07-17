@@ -130,6 +130,16 @@ namespace SavageExpenseTracker.WebApi.Tests
         }
 
         [Fact]
+        public async Task Update_ShouldReturnBadRequest_OnException()
+        {
+            var updateDto = new UpdateExpenseDto { Amount = 200 };
+            _expenseServiceMock.Setup(s => s.UpdateExpenseAsync(1, updateDto)).ThrowsAsync(new InvalidOperationException("Error"));
+            var result = await _controller.Update(1, updateDto);
+            var badRequest = result.Should().BeOfType<BadRequestObjectResult>().Subject;
+            badRequest.Value.Should().BeEquivalentTo(new { Message = "Error" });
+        }
+
+        [Fact]
         public async Task Delete_ShouldReturnNotFound_WhenDeleteFails()
         {
             // Arrange
@@ -153,6 +163,15 @@ namespace SavageExpenseTracker.WebApi.Tests
 
             // Assert
             result.Should().BeOfType<NoContentResult>();
+        }
+
+        [Fact]
+        public async Task Delete_ShouldReturnBadRequest_OnException()
+        {
+            _expenseServiceMock.Setup(s => s.DeleteExpenseAsync(1)).ThrowsAsync(new InvalidOperationException("Error"));
+            var result = await _controller.Delete(1);
+            var badRequest = result.Should().BeOfType<BadRequestObjectResult>().Subject;
+            badRequest.Value.Should().BeEquivalentTo(new { Message = "Error" });
         }
     }
 }

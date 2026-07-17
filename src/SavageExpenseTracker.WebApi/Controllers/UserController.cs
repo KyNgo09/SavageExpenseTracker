@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SavageExpenseTracker.Application.Interfaces;
 using SavageExpenseTracker.Application.Dtos.User;
@@ -12,14 +14,19 @@ namespace SavageExpenseTracker.WebApi.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IUserService _userService;
+        private readonly ITokenService _tokenService;
+        private readonly IUserRepository _userRepository;
 
-        public UsersController(IUserService UserService)
+        public UsersController(IUserService userService, ITokenService tokenService, IUserRepository userRepository)
         {
-            _userService = UserService;
+            _userService = userService;
+            _tokenService = tokenService;
+            _userRepository = userRepository;
         }
 
         // GET: api/users
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAll()
         {
             var users = await _userService.GetAllUserAsync();
@@ -28,6 +35,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
 
         // GET: api/users/{id}
         [HttpGet("{id}")]
+        [Authorize]
         public async Task<ActionResult<UserDto>> GetById(Guid id)
         {
             var user = await _userService.GetUserByIdAsync(id);
@@ -57,14 +65,76 @@ namespace SavageExpenseTracker.WebApi.Controllers
         [HttpPost("login")]
         public async Task<ActionResult<UserDto>> Login(LoginDto loginDto)
         {
-            var user = await _userService.AuthenticateAsync(loginDto);
-            if (user == null)
+            var userDto = await _userService.AuthenticateAsync(loginDto);
+            if (userDto == null)
             {
                 return Unauthorized(new { Message = "Invalid Email or Password"});
             }
-            return Ok(user);
+
+            // Generate access token and refresh token
+            var userEntity = await _userRepository.GetByIdAsync(userDto.Id);
+            if (userEntity == null) return BadRequest(new { Message = "User not found" });
+
+            var accessToken = _tokenService.GenerateAccessToken(userEntity);
+            var refreshToken = _tokenService.GenerateRefreshToken();
+
+            // Save the refresh token to the database
+            userEntity.RefreshToken = refreshToken;
+            userEntity.RefreshTokenExpiryDate = DateTime.UtcNow.AddDays(7); // Set refresh token expiry time
+            await _userRepository.UpdateAsync(userEntity);
+
+            return Ok(new TokenResponseDto
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken
+            });
         }
 
+        // POST: api/users/refresh-token
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken(TokenApiModel tokenApiModel)
+        {
+            if (tokenApiModel is null) return BadRequest("Invalid client request");
+
+            string accessToken = tokenApiModel.AccessToken;
+            string refreshToken = tokenApiModel.RefreshToken;
+
+            ClaimsPrincipal principal;
+            try
+            {
+                principal = _tokenService.GetPrincipalFromExpiredToken(accessToken);
+            }
+            catch
+            {
+                return BadRequest(new { Message = "Invalid access token or refresh" });
+            }
+
+            var userIdString = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!Guid.TryParse(userIdString, out Guid userId))
+                return BadRequest(new { Message = "Invalid Token "});
+
+            var user = await _userRepository.GetByIdAsync(userId);
+
+            if (user == null || user.RefreshToken != refreshToken || user.RefreshTokenExpiryDate <= DateTime.UtcNow)
+            {
+                return BadRequest(new { Message = "Invalid client request or Refresh Token has expired" });
+            }
+
+            var newAccessToken = _tokenService.GenerateAccessToken(user);
+            var newRefreshToken = _tokenService.GenerateRefreshToken();
+
+            user.RefreshToken = newRefreshToken;
+            user.RefreshTokenExpiryDate = DateTime.UtcNow.AddDays(7);
+            await _userRepository.UpdateAsync(user);
+
+            return Ok(new TokenResponseDto
+            {
+                AccessToken = newAccessToken,
+                RefreshToken = newRefreshToken
+            });
+        }
+        
         // POST: api/users/change-password/{id}
         [HttpPost("change-password/{id}")]
         public async Task<IActionResult> ChangePassword(Guid id, [FromBody] ChangePasswordDto changePasswordDto)

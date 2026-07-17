@@ -53,8 +53,20 @@ namespace SavageExpenseTracker.Application.Tests
             // Act
             var result = await _expenseService.GetExpenseByIdAsync(1);
 
-            // Assert
             result.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GetExpenseByIdAsync_ShouldReturnDto_WhenFound()
+        {
+            var expense = new Expense { Id = 1, Amount = 100 };
+            _expenseRepositoryMock.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync(expense);
+
+            var result = await _expenseService.GetExpenseByIdAsync(1);
+
+            result.Should().NotBeNull();
+            result!.Id.Should().Be(1);
+            result.Amount.Should().Be(100);
         }
 
         [Fact]
@@ -85,9 +97,26 @@ namespace SavageExpenseTracker.Application.Tests
             // Act
             var result = await _expenseService.CreateExpenseAsync(createDto);
 
-            // Assert
             _expenseRepositoryMock.Verify(repo => repo.AddAsync(It.Is<Expense>(e => 
                 e.TimeWork == 5 && e.AppliedHourlyRate == 100 && e.Amount == 500)), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateExpenseAsync_ShouldHandleZeroHourlyRate_Correctly()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var createDto = new CreateExpenseDto { UserId = userId, Amount = 500 };
+            var user = new User { Id = userId, HourlyRate = 0 }; // Zero hourly rate
+            
+            _userRepositoryMock.Setup(repo => repo.GetByIdAsync(userId)).ReturnsAsync(user);
+
+            // Act
+            var result = await _expenseService.CreateExpenseAsync(createDto);
+
+            // Assert
+            _expenseRepositoryMock.Verify(repo => repo.AddAsync(It.Is<Expense>(e => 
+                e.TimeWork == 0 && e.AppliedHourlyRate == 0 && e.Amount == 500)), Times.Once);
         }
 
         [Fact]

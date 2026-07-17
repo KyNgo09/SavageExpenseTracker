@@ -123,5 +123,91 @@ namespace SavageExpenseTracker.WebApi.Tests
             var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
             okResult.Value.Should().BeEquivalentTo(new { Message = "Đã hủy kết bạn." });
         }
+
+        [Fact]
+        public async Task GetPendingRequests_ShouldReturnOk_WithRequestsList()
+        {
+            var requests = new List<FriendshipRequestDto> { new FriendshipRequestDto { FriendshipId = 1, SenderName = "sender" } };
+            _friendshipServiceMock.Setup(s => s.GetPendingRequestsAsync(It.IsAny<Guid>())).ReturnsAsync(requests);
+
+            var result = await _controller.GetPendingRequests();
+
+            var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+            okResult.Value.Should().BeEquivalentTo(requests);
+        }
+
+        [Fact]
+        public async Task RejectRequest_ShouldReturnOk_WhenSuccess()
+        {
+            _friendshipServiceMock.Setup(s => s.RejectRequestAsync(It.IsAny<Guid>(), 1)).ReturnsAsync(true);
+            var result = await _controller.RejectRequest(1);
+            var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+            okResult.Value.Should().BeEquivalentTo(new { Message = "Đã từ chối lời mời." });
+        }
+
+        [Fact]
+        public async Task RejectRequest_ShouldReturnNotFound_WhenReturnsFalse()
+        {
+            _friendshipServiceMock.Setup(s => s.RejectRequestAsync(It.IsAny<Guid>(), 1)).ReturnsAsync(false);
+            var result = await _controller.RejectRequest(1);
+            result.Should().BeOfType<NotFoundResult>();
+        }
+
+        [Fact]
+        public async Task RejectRequest_ShouldReturnBadRequest_OnException()
+        {
+            _friendshipServiceMock.Setup(s => s.RejectRequestAsync(It.IsAny<Guid>(), 1)).ThrowsAsync(new InvalidOperationException("Error"));
+            var result = await _controller.RejectRequest(1);
+            var badRequestResult = result.Should().BeOfType<BadRequestObjectResult>().Subject;
+            badRequestResult.Value.Should().BeEquivalentTo(new { Message = "Error" });
+        }
+
+        [Fact]
+        public async Task AcceptRequest_ShouldReturnBadRequest_OnException()
+        {
+            _friendshipServiceMock.Setup(s => s.AcceptRequestAsync(It.IsAny<Guid>(), 1)).ThrowsAsync(new InvalidOperationException("Error"));
+            var result = await _controller.AcceptRequest(1);
+            var badRequestResult = result.Should().BeOfType<BadRequestObjectResult>().Subject;
+            badRequestResult.Value.Should().BeEquivalentTo(new { Message = "Error" });
+        }
+
+        [Fact]
+        public async Task BlockUser_ShouldReturnOk_WhenSuccess()
+        {
+            var targetId = Guid.NewGuid();
+            _friendshipServiceMock.Setup(s => s.BlockUserAsync(It.IsAny<Guid>(), targetId)).ReturnsAsync(true);
+            var result = await _controller.BlockUser(targetId);
+            var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+            okResult.Value.Should().BeEquivalentTo(new { Message = "Đã chặn người dùng." });
+        }
+
+        [Fact]
+        public async Task BlockUser_ShouldReturnBadRequest_OnException()
+        {
+            var targetId = Guid.NewGuid();
+            _friendshipServiceMock.Setup(s => s.BlockUserAsync(It.IsAny<Guid>(), targetId)).ThrowsAsync(new InvalidOperationException("Error"));
+            var result = await _controller.BlockUser(targetId);
+            var badRequestResult = result.Should().BeOfType<BadRequestObjectResult>().Subject;
+            badRequestResult.Value.Should().BeEquivalentTo(new { Message = "Error" });
+        }
+
+        [Fact]
+        public async Task UnblockUser_ShouldReturnOk_WhenSuccess()
+        {
+            var targetId = Guid.NewGuid();
+            _friendshipServiceMock.Setup(s => s.UnblockUserAsync(It.IsAny<Guid>(), targetId)).ReturnsAsync(true);
+            var result = await _controller.UnblockUser(targetId);
+            var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+            okResult.Value.Should().BeEquivalentTo(new { Message = "Đã bỏ chặn người dùng." });
+        }
+
+        [Fact]
+        public async Task UnblockUser_ShouldReturnNotFound_WhenReturnsFalse()
+        {
+            var targetId = Guid.NewGuid();
+            _friendshipServiceMock.Setup(s => s.UnblockUserAsync(It.IsAny<Guid>(), targetId)).ReturnsAsync(false);
+            var result = await _controller.UnblockUser(targetId);
+            result.Should().BeOfType<NotFoundResult>();
+        }
     }
 }

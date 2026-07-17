@@ -36,8 +36,15 @@ namespace SavageExpenseTracker.WebApi.Controllers
         [HttpPost]
         public async Task<ActionResult<ChallengeDto>> Create(CreateChallengeDto dto)
         {
-            var result = await _challengeService.CreateChallengeAsync(dto);
-            return Ok(result);
+            try
+            {
+                var result = await _challengeService.CreateChallengeAsync(dto);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
 
         [HttpPost("{id}/join")]

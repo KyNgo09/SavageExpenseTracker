@@ -57,24 +57,38 @@ namespace SavageExpenseTracker.WebApi.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(long id, UpdateExpenseDto updateExpenseDto)
         {
-            var result = await _expenseService.UpdateExpenseAsync(id, updateExpenseDto);
-            if (!result)
+            try
             {
-                return NotFound(new { Message = "Exp" });
+                var result = await _expenseService.UpdateExpenseAsync(id, updateExpenseDto);
+                if (!result)
+                {
+                    return NotFound(new { Message = "Exp" });
+                }
+                return NoContent();
             }
-            return NoContent();
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
 
         // DELETE: api/expenses/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(long id)
         {
-            var result = await _expenseService.DeleteExpenseAsync(id);
-            if (!result)
+            try
             {
-                return NotFound(new { Message = $"Can't find Expense with Id: {id}" });
+                var result = await _expenseService.DeleteExpenseAsync(id);
+                if (!result)
+                {
+                    return NotFound(new { Message = $"Can't find Expense with Id: {id}" });
+                }
+                return NoContent();
             }
-            return NoContent();
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
     }
 }

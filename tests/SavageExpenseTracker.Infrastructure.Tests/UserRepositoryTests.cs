@@ -110,5 +110,72 @@ namespace SavageExpenseTracker.Infrastructure.Tests
             var deletedUser = await _context.Users.FindAsync(user.Id);
             deletedUser.Should().BeNull();
         }
+
+        [Fact]
+        public async Task GetAllAsync_ShouldReturnAllUsers()
+        {
+            await _context.Users.AddAsync(new User { Id = Guid.NewGuid(), Email = "1@test.com", UserName = "1", PasswordHash = "hash" });
+            await _context.Users.AddAsync(new User { Id = Guid.NewGuid(), Email = "2@test.com", UserName = "2", PasswordHash = "hash" });
+            await _context.SaveChangesAsync();
+
+            var result = await _repository.GetAllAsync();
+            result.Should().HaveCount(2);
+        }
+
+        [Fact]
+        public async Task GetByUserNameAsync_ShouldReturnUser_WhenExists()
+        {
+            var userName = "testuser";
+            var user = new User { Id = Guid.NewGuid(), Email = "u@test.com", UserName = userName, PasswordHash = "hash" };
+            await _context.Users.AddAsync(user);
+            await _context.SaveChangesAsync();
+
+            var result = await _repository.GetByUserNameAsync(userName);
+
+            result.Should().NotBeNull();
+            result!.UserName.Should().Be(userName);
+        }
+
+        [Fact]
+        public async Task GetByIdAsync_ShouldReturnNull_WhenNotFound()
+        {
+            var result = await _repository.GetByIdAsync(Guid.NewGuid());
+            result.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GetByEmailAsync_ShouldReturnNull_WhenNotFound()
+        {
+            var result = await _repository.GetByEmailAsync("notfound@test.com");
+            result.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GetByUserNameAsync_ShouldReturnNull_WhenNotFound()
+        {
+            var result = await _repository.GetByUserNameAsync("notfound");
+            result.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task EmailExistsAsync_ShouldReturnFalse_WhenNotExists()
+        {
+            var result = await _repository.EmailExistsAsync("notfound@test.com");
+            result.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ShouldUpdateUser()
+        {
+            var user = new User { Id = Guid.NewGuid(), Email = "u@test.com", UserName = "u", PasswordHash = "hash" };
+            await _context.Users.AddAsync(user);
+            await _context.SaveChangesAsync();
+
+            user.UserName = "new_u";
+            await _repository.UpdateAsync(user);
+
+            var updated = await _context.Users.FindAsync(user.Id);
+            updated!.UserName.Should().Be("new_u");
+        }
     }
 }

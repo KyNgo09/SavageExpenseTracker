@@ -63,6 +63,16 @@ namespace SavageExpenseTracker.Infrastructure.Tests
         }
 
         [Fact]
+        public async Task GetByIdAsync_ShouldReturnNull_WhenNotFound()
+        {
+            // Act
+            var result = await _repository.GetByIdAsync(999);
+
+            // Assert
+            result.Should().BeNull();
+        }
+
+        [Fact]
         public async Task GetByUserIdAsync_ShouldReturnExpenses_OrderedByDescendingCreatedAt()
         {
             // Arrange
@@ -98,6 +108,24 @@ namespace SavageExpenseTracker.Infrastructure.Tests
             // Assert
             var deletedExpense = await _context.Expenses.FindAsync(expense.Id);
             deletedExpense.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ShouldUpdateExpense_InDatabase()
+        {
+            // Arrange
+            var expense = new Expense { Id = 7, UserId = Guid.NewGuid(), Amount = 100, CreatedAt = DateTime.UtcNow };
+            await _context.Expenses.AddAsync(expense);
+            await _context.SaveChangesAsync();
+
+            // Act
+            expense.Amount = 500;
+            await _repository.UpdateAsync(expense);
+
+            // Assert
+            var updatedExpense = await _context.Expenses.FindAsync(expense.Id);
+            updatedExpense.Should().NotBeNull();
+            updatedExpense!.Amount.Should().Be(500);
         }
     }
 }

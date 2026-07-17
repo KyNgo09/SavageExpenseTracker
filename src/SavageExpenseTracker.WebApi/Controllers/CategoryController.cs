@@ -55,9 +55,16 @@ namespace SavageExpenseTracker.WebApi.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(long id, UpdateCategoryDto updateCategoryDto)
         {
-            var result = await _categoryService.UpdateCategoryAsync(id, updateCategoryDto);
-            if(!result) return NotFound(new { Message = "Category Not Found" });
-            return NoContent();
+            try
+            {
+                var result = await _categoryService.UpdateCategoryAsync(id, updateCategoryDto);
+                if(!result) return NotFound(new { Message = "Category Not Found" });
+                return NoContent();
+            }
+            catch(Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
 
         // DELETE: api/categories/{id}

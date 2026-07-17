@@ -133,6 +133,19 @@ namespace SavageExpenseTracker.Application.Tests
         }
 
         [Fact]
+        public async Task ChangePasswordAsync_ShouldThrowException_WhenUserNotFound()
+        {
+            var userId = Guid.NewGuid();
+            var dto = new ChangePasswordDto { OldPassword = "old", NewPassword = "new", ConfirmNewPassword = "new" };
+            _userRepositoryMock.Setup(repo => repo.GetByIdAsync(userId)).ReturnsAsync((User)null!);
+
+            Func<Task> act = async () => await _userService.ChangePasswordAsync(userId, dto);
+
+            await act.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("User not found!");
+        }
+
+        [Fact]
         public async Task ChangePasswordAsync_ShouldUpdatePassword_WhenSuccess()
         {
             // Arrange
@@ -148,6 +161,133 @@ namespace SavageExpenseTracker.Application.Tests
             result.Should().BeTrue();
             user.PasswordHash.Should().Be(PasswordHasher.HashPassword("new"));
             _userRepositoryMock.Verify(repo => repo.UpdateAsync(user), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetAllUserAsync_ShouldReturnDtoList()
+        {
+            var users = new List<User> { new User { Id = Guid.NewGuid(), Email = "a@test.com" } };
+            _userRepositoryMock.Setup(repo => repo.GetAllAsync()).ReturnsAsync(users);
+
+            var result = await _userService.GetAllUserAsync();
+
+            result.Should().HaveCount(1);
+            result.First().Email.Should().Be("a@test.com");
+        }
+
+        [Fact]
+        public async Task GetUserByIdAsync_ShouldReturnDto_WhenFound()
+        {
+            var userId = Guid.NewGuid();
+            _userRepositoryMock.Setup(repo => repo.GetByIdAsync(userId)).ReturnsAsync(new User { Id = userId, Email = "test@test.com" });
+
+            var result = await _userService.GetUserByIdAsync(userId);
+
+            result.Should().NotBeNull();
+            result!.Email.Should().Be("test@test.com");
+        }
+
+        [Fact]
+        public async Task GetUserByIdAsync_ShouldReturnNull_WhenNotFound()
+        {
+            _userRepositoryMock.Setup(repo => repo.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((User)null!);
+            var result = await _userService.GetUserByIdAsync(Guid.NewGuid());
+            result.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GetUserByEmailAsync_ShouldReturnDto_WhenFound()
+        {
+            _userRepositoryMock.Setup(repo => repo.GetByEmailAsync("test@test.com")).ReturnsAsync(new User { Email = "test@test.com" });
+            var result = await _userService.GetUserByEmailAsync("test@test.com");
+            result.Should().NotBeNull();
+            result!.Email.Should().Be("test@test.com");
+        }
+
+        [Fact]
+        public async Task GetUserByUserNameAsync_ShouldReturnDto_WhenFound()
+        {
+            _userRepositoryMock.Setup(repo => repo.GetByUserNameAsync("username")).ReturnsAsync(new User { UserName = "username" });
+            var result = await _userService.GetUserByUserNameAsync("username");
+            result.Should().NotBeNull();
+            result!.UserName.Should().Be("username");
+        }
+
+        [Fact]
+        public async Task GetUserByUserNameAsync_ShouldReturnNull_WhenNotFound()
+        {
+            _userRepositoryMock.Setup(repo => repo.GetByUserNameAsync("username")).ReturnsAsync((User)null!);
+            var result = await _userService.GetUserByUserNameAsync("username");
+            result.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task EmailExistsAsync_ShouldReturnBoolean()
+        {
+            _userRepositoryMock.Setup(repo => repo.EmailExistsAsync("test@test.com")).ReturnsAsync(true);
+            var result = await _userService.EmailExistsAsync("test@test.com");
+            result.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task UpdateUserAsync_ShouldReturnFalse_WhenNotFound()
+        {
+            _userRepositoryMock.Setup(repo => repo.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((User)null!);
+            var result = await _userService.UpdateUserAsync(Guid.NewGuid(), new UpdateUserDto());
+            result.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task UpdateUserAsync_ShouldUpdateAndReturnTrue_WhenSuccess()
+        {
+            var userId = Guid.NewGuid();
+            var user = new User { Id = userId, UserName = "old" };
+            _userRepositoryMock.Setup(repo => repo.GetByIdAsync(userId)).ReturnsAsync(user);
+
+            var result = await _userService.UpdateUserAsync(userId, new UpdateUserDto { UserName = "new", HourlyRate = 100 });
+
+            result.Should().BeTrue();
+            user.UserName.Should().Be("new");
+            user.HourlyRate.Should().Be(100);
+            _userRepositoryMock.Verify(repo => repo.UpdateAsync(user), Times.Once);
+        }
+
+        [Fact]
+        public async Task DeleteUserAsync_ShouldReturnFalse_WhenNotFound()
+        {
+            _userRepositoryMock.Setup(repo => repo.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((User)null!);
+            var result = await _userService.DeleteUserAsync(Guid.NewGuid());
+            result.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task DeleteUserAsync_ShouldDeleteAndReturnTrue_WhenSuccess()
+        {
+            var userId = Guid.NewGuid();
+            _userRepositoryMock.Setup(repo => repo.GetByIdAsync(userId)).ReturnsAsync(new User { Id = userId });
+
+            var result = await _userService.DeleteUserAsync(userId);
+
+            result.Should().BeTrue();
+            _userRepositoryMock.Verify(repo => repo.DeleteAsync(userId), Times.Once);
+        }
+
+        [Fact]
+        public async Task SearchUserByEmailAsync_ShouldReturnMatchingUsers()
+        {
+            var users = new List<User> 
+            { 
+                new User { Email = "test@example.com" },
+                new User { Email = "other@example.com" },
+                new User { Email = "test2@test.com" }
+            };
+            _userRepositoryMock.Setup(repo => repo.GetAllAsync()).ReturnsAsync(users);
+
+            var result = (await _userService.SearchUserByEmailAsync("test")).ToList();
+
+            result.Should().HaveCount(2);
+            result[0].Email.Should().Be("test@example.com");
+            result[1].Email.Should().Be("test2@test.com");
         }
     }
 }
