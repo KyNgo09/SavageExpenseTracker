@@ -1,13 +1,15 @@
 using System;
 using System.Threading.Tasks;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using SavageExpenseTracker.Application.Interfaces;
 
 namespace SavageExpenseTracker.WebApi.Controllers
 {
     [ApiController]
     [Route("/api/friendships")]
-
+    [Authorize]
     public class FriendshipController : ControllerBase
     {
         private readonly IFriendshipService _friendshipService;
@@ -19,9 +21,14 @@ namespace SavageExpenseTracker.WebApi.Controllers
 
         private Guid GetCurrentUserId()
         {
-            // return Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            // Hiện tại fix cứng để dev, đổi lại khi ráp JWT nhé!
-            return Guid.Empty; 
+            var userIdString = User.FindFirstValue(ClaimTypes.Name.Identifier);
+
+            if (Guid.TryParse(userIdString, out Guid userId))
+            {
+                return userId;
+            }
+            
+            throw new InvalidOperationException("Không thể xác định người dùng hiện tại."); 
         }
 
         [HttpGet("friends")]

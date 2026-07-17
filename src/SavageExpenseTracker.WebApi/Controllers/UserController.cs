@@ -137,6 +137,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
         
         // POST: api/users/change-password/{id}
         [HttpPost("change-password/{id}")]
+        [Authorize]
         public async Task<IActionResult> ChangePassword(Guid id, [FromBody] ChangePasswordDto changePasswordDto)
         {
             try
@@ -156,6 +157,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
 
         // GET: api/users/search?email={email}
         [HttpGet("search")]
+        [Authorize]
         public async Task<ActionResult<IEnumerable<UserDto>>> Search([FromQuery] string email)
         {
             if (string.IsNullOrWhiteSpace(email))
@@ -168,6 +170,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
 
         // PUT: api/users/{id}
         [HttpPut("{id}")]
+        [Authorize]
         public async Task<IActionResult> Update(Guid id, UpdateUserDto updateUserDto)
         {
             try
@@ -187,6 +190,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
 
         // DELETE: api/users/{id}
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(Guid id)
         {
             var result = await _userService.DeleteUserAsync(id);

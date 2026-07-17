@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using SavageExpenseTracker.Application.Dtos.Expense;
 using SavageExpenseTracker.Application.Interfaces;
 
@@ -9,6 +10,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
 {
     [ApiController]
     [Route("api/expenses")]
+    [Authorize]
     public class ExpensesController : ControllerBase
     {
         private readonly IExpenseService _expenseService;

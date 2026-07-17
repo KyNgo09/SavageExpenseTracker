@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using SavageExpenseTracker.Application.Interfaces;
 using SavageExpenseTracker.Application.Dtos.Challenge;
 
@@ -9,6 +10,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
 {
     [ApiController]
     [Route("api/challenges")]
+    [Authorize]
     public class ChallengeController : ControllerBase
     {
         private readonly IChallengeService _challengeService;

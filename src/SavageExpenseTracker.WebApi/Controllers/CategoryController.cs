@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using SavageExpenseTracker.Application.Dtos.Category;
 using SavageExpenseTracker.Application.Interfaces;
 
@@ -9,6 +10,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
 {
     [ApiController]
     [Route("api/categories")]
+    [Authorize]
     public class CategoriesController : ControllerBase
     {
         private readonly ICategoryService _categoryService;
