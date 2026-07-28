@@ -49,7 +49,7 @@ namespace SavageExpenseTracker.WebApi.Tests
 
             // Assert
             var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
-            okResult.Value.Should().BeEquivalentTo(new { Message = "Đã gửi lời mời kết bạn." });
+            okResult.Value.Should().BeEquivalentTo(new { Message = "Friend request sent." });
         }
 
         [Fact]
@@ -92,7 +92,7 @@ namespace SavageExpenseTracker.WebApi.Tests
 
             // Assert
             var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
-            okResult.Value.Should().BeEquivalentTo(new { Message = "Đã chấp nhận kết bạn." });
+            okResult.Value.Should().BeEquivalentTo(new { Message = "Friend request accepted." });
         }
 
         [Fact]
@@ -121,7 +121,7 @@ namespace SavageExpenseTracker.WebApi.Tests
 
             // Assert
             var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
-            okResult.Value.Should().BeEquivalentTo(new { Message = "Đã hủy kết bạn." });
+            okResult.Value.Should().BeEquivalentTo(new { Message = "Friendship removed." });
         }
 
         [Fact]
@@ -142,7 +142,7 @@ namespace SavageExpenseTracker.WebApi.Tests
             _friendshipServiceMock.Setup(s => s.RejectRequestAsync(It.IsAny<Guid>(), 1)).ReturnsAsync(true);
             var result = await _controller.RejectRequest(1);
             var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
-            okResult.Value.Should().BeEquivalentTo(new { Message = "Đã từ chối lời mời." });
+            okResult.Value.Should().BeEquivalentTo(new { Message = "Friend request rejected." });
         }
 
         [Fact]
@@ -178,7 +178,7 @@ namespace SavageExpenseTracker.WebApi.Tests
             _friendshipServiceMock.Setup(s => s.BlockUserAsync(It.IsAny<Guid>(), targetId)).ReturnsAsync(true);
             var result = await _controller.BlockUser(targetId);
             var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
-            okResult.Value.Should().BeEquivalentTo(new { Message = "Đã chặn người dùng." });
+            okResult.Value.Should().BeEquivalentTo(new { Message = "User blocked." });
         }
 
         [Fact]
@@ -198,7 +198,7 @@ namespace SavageExpenseTracker.WebApi.Tests
             _friendshipServiceMock.Setup(s => s.UnblockUserAsync(It.IsAny<Guid>(), targetId)).ReturnsAsync(true);
             var result = await _controller.UnblockUser(targetId);
             var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
-            okResult.Value.Should().BeEquivalentTo(new { Message = "Đã bỏ chặn người dùng." });
+            okResult.Value.Should().BeEquivalentTo(new { Message = "User unblocked." });
         }
 
         [Fact]

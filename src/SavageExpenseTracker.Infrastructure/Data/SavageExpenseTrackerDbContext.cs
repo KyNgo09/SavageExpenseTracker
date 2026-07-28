@@ -10,7 +10,7 @@ namespace SavageExpenseTracker.Infrastructure.Data
         {
         }
 
-        // Định nghĩa DbSet cho bảng Users
+        // Define DbSet for Users table
         public DbSet<User> Users => Set<User>();
         public DbSet<Expense> Expenses => Set<Expense>();
         public DbSet<Category> Categories => Set<Category>();

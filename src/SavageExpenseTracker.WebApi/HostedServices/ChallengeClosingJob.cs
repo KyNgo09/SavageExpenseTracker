@@ -26,7 +26,7 @@ namespace SavageExpenseTracker.WebApi.HostedServices
                     await challengeService.ProcessExpiredChallengesAsync();
                 }
                 
-                // Job quét 1 giờ 1 lần
+                // Job scans once every hour
                 await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
             }
         }

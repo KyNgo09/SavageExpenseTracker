@@ -64,7 +64,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
                 var result = await _expenseService.UpdateExpenseAsync(id, updateExpenseDto);
                 if (!result)
                 {
-                    return NotFound(new { Message = "Exp" });
+                    return NotFound(new { Message = "Expense Not Found" });
                 }
                 return NoContent();
             }

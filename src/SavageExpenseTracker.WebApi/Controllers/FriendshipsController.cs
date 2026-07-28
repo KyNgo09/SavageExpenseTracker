@@ -28,7 +28,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
                 return userId;
             }
             
-            throw new InvalidOperationException("Không thể xác định người dùng hiện tại."); 
+            throw new InvalidOperationException("Unable to determine current user."); 
         }
 
         [HttpGet("friends")]
@@ -51,7 +51,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
             try
             {
                 await _friendshipService.SendRequestAsync(GetCurrentUserId(), targetUserId);
-                return Ok(new { Message = "Đã gửi lời mời kết bạn." });
+                return Ok(new { Message = "Friend request sent." });
             }
             catch (InvalidOperationException ex) { return BadRequest(new { Message = ex.Message }); }
         }
@@ -63,7 +63,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
             {
                 var success = await _friendshipService.AcceptRequestAsync(GetCurrentUserId(), id);
                 if (!success) return NotFound();
-                return Ok(new { Message = "Đã chấp nhận kết bạn." });
+                return Ok(new { Message = "Friend request accepted." });
             }
             catch (InvalidOperationException ex) { return BadRequest(new { Message = ex.Message }); }
         }
@@ -75,7 +75,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
             {
                 var success = await _friendshipService.RejectRequestAsync(GetCurrentUserId(), id);
                 if (!success) return NotFound();
-                return Ok(new { Message = "Đã từ chối lời mời." });
+                return Ok(new { Message = "Friend request rejected." });
             }
             catch (InvalidOperationException ex) { return BadRequest(new { Message = ex.Message }); }
         }
@@ -85,7 +85,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
         {
             var success = await _friendshipService.UnfriendAsync(GetCurrentUserId(), friendId);
             if (!success) return NotFound();
-            return Ok(new { Message = "Đã hủy kết bạn." });
+            return Ok(new { Message = "Friendship removed." });
         }
 
         [HttpPost("block/{targetUserId}")]
@@ -94,7 +94,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
             try
             {
                 await _friendshipService.BlockUserAsync(GetCurrentUserId(), targetUserId);
-                return Ok(new { Message = "Đã chặn người dùng." });
+                return Ok(new { Message = "User blocked." });
             }
             catch (InvalidOperationException ex) { return BadRequest(new { Message = ex.Message }); }
         }
@@ -104,7 +104,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
         {
             var success = await _friendshipService.UnblockUserAsync(GetCurrentUserId(), targetUserId);
             if (!success) return NotFound();
-            return Ok(new { Message = "Đã bỏ chặn người dùng." });
+            return Ok(new { Message = "User unblocked." });
         }
     }
 }

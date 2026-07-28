@@ -55,7 +55,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
             try
             {
                 var result = await _challengeService.JoinChallengeAsync(id, userId);
-                if (!result) return NotFound(new { Message = "Phòng không tồn tại." });
+                if (!result) return NotFound(new { Message = "Challenge not found." });
                 return Ok();
             }
             catch (InvalidOperationException ex)

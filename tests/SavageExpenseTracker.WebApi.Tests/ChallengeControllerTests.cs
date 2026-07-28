@@ -40,12 +40,12 @@ namespace SavageExpenseTracker.WebApi.Tests
             _challengeServiceMock.Setup(s => s.GetChallengeByIdAsync(1)).ReturnsAsync((ChallengeDto)null!);
             var result = await _controller.GetById(1);
             
-            // Depends on what controller actually returns. If it returns NotFound(new {Message="Phòng không tồn tại."})
+            // Depends on what controller actually returns. If it returns NotFound(new {Message="Challenge not found."})
             // we should check ObjectResult. If it returns just NotFound(), it will be NotFoundResult.
             // Based on analysis report, it might return an object result.
             if (result.Result is NotFoundObjectResult notFoundObj)
             {
-                notFoundObj.Value.Should().BeEquivalentTo(new { Message = "Phòng không tồn tại." });
+                notFoundObj.Value.Should().BeEquivalentTo(new { Message = "Challenge not found." });
             }
             else
             {
@@ -97,7 +97,7 @@ namespace SavageExpenseTracker.WebApi.Tests
             var result = await _controller.Join(1, userId);
             
             var notFound = result.Should().BeOfType<NotFoundObjectResult>().Subject;
-            notFound.Value.Should().BeEquivalentTo(new { Message = "Phòng không tồn tại." });
+            notFound.Value.Should().BeEquivalentTo(new { Message = "Challenge not found." });
         }
 
         [Fact]
