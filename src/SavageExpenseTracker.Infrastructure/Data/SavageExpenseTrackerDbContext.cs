@@ -37,6 +37,7 @@ namespace SavageExpenseTracker.Infrastructure.Data
 
                 // Unique Constraints
                 entity.HasIndex(e => e.Email).IsUnique();
+                entity.HasIndex(e => e.UserName).IsUnique();
             });
 
             // Configure table named "expenses".

@@ -50,11 +50,21 @@ namespace SavageExpenseTracker.Application.Services
             return await _userRepository.EmailExistsAsync(email);
         }
 
+        public async Task<bool> UserNameExistsAsync(string username)
+        {
+            return await _userRepository.UserNameExistsAsync(username);
+        }
+
         public async Task<UserDto> RegisterUserAsync(CreateUserDto createUserDto)
         {
             if (await _userRepository.EmailExistsAsync(createUserDto.Email))
             {
                 throw new InvalidOperationException("Email already exists!");
+            }
+
+            if (await _userRepository.UserNameExistsAsync(createUserDto.UserName))
+            {
+                throw new InvalidOperationException("Username already exists!");
             }
 
             var passwordHash = PasswordHasher.HashPassword(createUserDto.Password);
@@ -77,6 +87,11 @@ namespace SavageExpenseTracker.Application.Services
         {
             var user = await _userRepository.GetByIdAsync(id);
             if (user == null) return false;
+
+            if (user.UserName != updateUserDto.UserName && await _userRepository.UserNameExistsAsync(updateUserDto.UserName))
+            {
+                throw new InvalidOperationException("Username already exists!");
+            }
 
             user.UserName = updateUserDto.UserName;
             user.HourlyRate = updateUserDto.HourlyRate;

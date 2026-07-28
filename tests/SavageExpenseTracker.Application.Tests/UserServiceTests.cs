@@ -40,6 +40,22 @@ namespace SavageExpenseTracker.Application.Tests
         }
 
         [Fact]
+        public async Task RegisterUserAsync_ShouldThrowException_WhenUserNameExists()
+        {
+            // Arrange
+            var createDto = new CreateUserDto { Email = "new@example.com", UserName = "existinguser" };
+            _userRepositoryMock.Setup(repo => repo.EmailExistsAsync(createDto.Email)).ReturnsAsync(false);
+            _userRepositoryMock.Setup(repo => repo.UserNameExistsAsync(createDto.UserName)).ReturnsAsync(true);
+
+            // Act
+            Func<Task> act = async () => await _userService.RegisterUserAsync(createDto);
+
+            // Assert
+            await act.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("Username already exists!");
+        }
+
+        [Fact]
         public async Task RegisterUserAsync_ShouldAddUser_WhenSuccess()
         {
             // Arrange
@@ -235,6 +251,21 @@ namespace SavageExpenseTracker.Application.Tests
             _userRepositoryMock.Setup(repo => repo.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((User)null!);
             var result = await _userService.UpdateUserAsync(Guid.NewGuid(), new UpdateUserDto());
             result.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task UpdateUserAsync_ShouldThrowException_WhenUserNameExists()
+        {
+            var userId = Guid.NewGuid();
+            var user = new User { Id = userId, UserName = "oldname" };
+            var updateDto = new UpdateUserDto { UserName = "takenname" };
+            _userRepositoryMock.Setup(repo => repo.GetByIdAsync(userId)).ReturnsAsync(user);
+            _userRepositoryMock.Setup(repo => repo.UserNameExistsAsync("takenname")).ReturnsAsync(true);
+
+            Func<Task> act = async () => await _userService.UpdateUserAsync(userId, updateDto);
+
+            await act.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("Username already exists!");
         }
 
         [Fact]

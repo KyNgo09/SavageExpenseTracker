@@ -20,6 +20,6 @@ namespace SavageExpenseTracker.Application.Interfaces
 
         // Exist Methods
         Task<bool> EmailExistsAsync(string email);
-    
+        Task<bool> UserNameExistsAsync(string username);
     }
 }

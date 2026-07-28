@@ -62,5 +62,10 @@ namespace SavageExpenseTracker.Infrastructure.Repositories
         {
             return await _context.Users.AnyAsync(u => u.Email == email);
         }
+
+        public async Task<bool> UserNameExistsAsync(string username)
+        {
+            return await _context.Users.AnyAsync(u => u.UserName == username);
+        }
     }
 }
