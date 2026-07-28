@@ -56,11 +56,16 @@ namespace SavageExpenseTracker.Application.Services
             return expense.ToDto();
         }
 
-         public async Task<bool> UpdateExpenseAsync(long id, UpdateExpenseDto updateExpenseDto)
+         public async Task<bool> UpdateExpenseAsync(long id, Guid currentUserId, UpdateExpenseDto updateExpenseDto)
         {
             var expense = await _expenseRepository.GetByIdAsync(id);
             if (expense == null) return false;
             
+            if (expense.UserId != currentUserId)
+            {
+                throw new InvalidOperationException("You do not have permission to update this expense.");
+            }
+
             // Calculate TimeWork based on the applied hourly rate saved in the past (do not use the current user.HourlyRate)
             var timeWork = expense.AppliedHourlyRate > 0 ? updateExpenseDto.Amount / expense.AppliedHourlyRate : 0;
             expense.Description = updateExpenseDto.Description;
@@ -73,10 +78,15 @@ namespace SavageExpenseTracker.Application.Services
             return true;
         }
 
-        public async Task<bool> DeleteExpenseAsync(long id)
+        public async Task<bool> DeleteExpenseAsync(long id, Guid currentUserId)
         {
             var expense = await _expenseRepository.GetByIdAsync(id);
             if (expense == null) return false;
+
+            if (expense.UserId != currentUserId)
+            {
+                throw new InvalidOperationException("You do not have permission to delete this expense.");
+            }
             await _expenseRepository.DeleteAsync(id);
             return true;
         }

@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using SavageExpenseTracker.Application.Dtos.Expense;
@@ -15,23 +17,32 @@ namespace SavageExpenseTracker.WebApi.Tests
     {
         private readonly Mock<IExpenseService> _expenseServiceMock;
         private readonly ExpensesController _controller;
+        private readonly Guid _currentUserId;
 
         public ExpensesControllerTests()
         {
             _expenseServiceMock = new Mock<IExpenseService>();
             _controller = new ExpensesController(_expenseServiceMock.Object);
+            _currentUserId = Guid.NewGuid();
+
+            var claims = new[] { new Claim(ClaimTypes.NameIdentifier, _currentUserId.ToString()) };
+            var identity = new ClaimsIdentity(claims);
+            var user = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = user }
+            };
         }
 
         [Fact]
-        public async Task GetUserExpenses_ShouldReturnOkResult_WithExpenses()
+        public async Task GetMyExpenses_ShouldReturnOkResult_WithExpenses()
         {
             // Arrange
-            var userId = Guid.NewGuid();
             var expenses = new List<ExpenseDto> { new ExpenseDto { Id = 1, Amount = 100 } };
-            _expenseServiceMock.Setup(s => s.GetUserExpensesAsync(userId)).ReturnsAsync(expenses);
+            _expenseServiceMock.Setup(s => s.GetUserExpensesAsync(_currentUserId)).ReturnsAsync(expenses);
 
             // Act
-            var result = await _controller.GetUserExpenses(userId);
+            var result = await _controller.GetMyExpenses();
 
             // Assert
             var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
@@ -73,12 +84,14 @@ namespace SavageExpenseTracker.WebApi.Tests
             // Arrange
             var createDto = new CreateExpenseDto { Amount = 100 };
             var createdExpense = new ExpenseDto { Id = 1, Amount = 100 };
-            _expenseServiceMock.Setup(s => s.CreateExpenseAsync(createDto)).ReturnsAsync(createdExpense);
+            _expenseServiceMock.Setup(s => s.CreateExpenseAsync(It.Is<CreateExpenseDto>(d => d.UserId == _currentUserId)))
+                .ReturnsAsync(createdExpense);
 
             // Act
             var result = await _controller.Create(createDto);
 
             // Assert
+            createDto.UserId.Should().Be(_currentUserId);
             var createdResult = result.Result.Should().BeOfType<CreatedAtActionResult>().Subject;
             createdResult.ActionName.Should().Be(nameof(ExpensesController.GetById));
             createdResult.RouteValues?["id"].Should().Be(1);
@@ -90,7 +103,7 @@ namespace SavageExpenseTracker.WebApi.Tests
         {
             // Arrange
             var createDto = new CreateExpenseDto { Amount = 100 };
-            _expenseServiceMock.Setup(s => s.CreateExpenseAsync(createDto))
+            _expenseServiceMock.Setup(s => s.CreateExpenseAsync(It.IsAny<CreateExpenseDto>()))
                 .ThrowsAsync(new InvalidOperationException("Error"));
 
             // Act
@@ -106,7 +119,7 @@ namespace SavageExpenseTracker.WebApi.Tests
         {
             // Arrange
             var updateDto = new UpdateExpenseDto { Amount = 200 };
-            _expenseServiceMock.Setup(s => s.UpdateExpenseAsync(1, updateDto)).ReturnsAsync(false);
+            _expenseServiceMock.Setup(s => s.UpdateExpenseAsync(1, _currentUserId, updateDto)).ReturnsAsync(false);
 
             // Act
             var result = await _controller.Update(1, updateDto);
@@ -120,7 +133,7 @@ namespace SavageExpenseTracker.WebApi.Tests
         {
             // Arrange
             var updateDto = new UpdateExpenseDto { Amount = 200 };
-            _expenseServiceMock.Setup(s => s.UpdateExpenseAsync(1, updateDto)).ReturnsAsync(true);
+            _expenseServiceMock.Setup(s => s.UpdateExpenseAsync(1, _currentUserId, updateDto)).ReturnsAsync(true);
 
             // Act
             var result = await _controller.Update(1, updateDto);
@@ -133,7 +146,8 @@ namespace SavageExpenseTracker.WebApi.Tests
         public async Task Update_ShouldReturnBadRequest_OnException()
         {
             var updateDto = new UpdateExpenseDto { Amount = 200 };
-            _expenseServiceMock.Setup(s => s.UpdateExpenseAsync(1, updateDto)).ThrowsAsync(new InvalidOperationException("Error"));
+            _expenseServiceMock.Setup(s => s.UpdateExpenseAsync(1, _currentUserId, updateDto))
+                .ThrowsAsync(new InvalidOperationException("Error"));
             var result = await _controller.Update(1, updateDto);
             var badRequest = result.Should().BeOfType<BadRequestObjectResult>().Subject;
             badRequest.Value.Should().BeEquivalentTo(new { Message = "Error" });
@@ -143,7 +157,7 @@ namespace SavageExpenseTracker.WebApi.Tests
         public async Task Delete_ShouldReturnNotFound_WhenDeleteFails()
         {
             // Arrange
-            _expenseServiceMock.Setup(s => s.DeleteExpenseAsync(1)).ReturnsAsync(false);
+            _expenseServiceMock.Setup(s => s.DeleteExpenseAsync(1, _currentUserId)).ReturnsAsync(false);
 
             // Act
             var result = await _controller.Delete(1);
@@ -156,7 +170,7 @@ namespace SavageExpenseTracker.WebApi.Tests
         public async Task Delete_ShouldReturnNoContent_WhenDeleteSucceeds()
         {
             // Arrange
-            _expenseServiceMock.Setup(s => s.DeleteExpenseAsync(1)).ReturnsAsync(true);
+            _expenseServiceMock.Setup(s => s.DeleteExpenseAsync(1, _currentUserId)).ReturnsAsync(true);
 
             // Act
             var result = await _controller.Delete(1);
@@ -168,7 +182,8 @@ namespace SavageExpenseTracker.WebApi.Tests
         [Fact]
         public async Task Delete_ShouldReturnBadRequest_OnException()
         {
-            _expenseServiceMock.Setup(s => s.DeleteExpenseAsync(1)).ThrowsAsync(new InvalidOperationException("Error"));
+            _expenseServiceMock.Setup(s => s.DeleteExpenseAsync(1, _currentUserId))
+                .ThrowsAsync(new InvalidOperationException("Error"));
             var result = await _controller.Delete(1);
             var badRequest = result.Should().BeOfType<BadRequestObjectResult>().Subject;
             badRequest.Value.Should().BeEquivalentTo(new { Message = "Error" });

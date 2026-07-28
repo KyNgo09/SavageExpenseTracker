@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using SavageExpenseTracker.Application.Interfaces;
 using SavageExpenseTracker.Application.Dtos.Challenge;
+using SavageExpenseTracker.WebApi.Extensions;
 
 namespace SavageExpenseTracker.WebApi.Controllers
 {
@@ -50,11 +51,11 @@ namespace SavageExpenseTracker.WebApi.Controllers
         }
 
         [HttpPost("{id}/join")]
-        public async Task<IActionResult> Join(long id, [FromBody] Guid userId)
+        public async Task<IActionResult> Join(long id)
         {
             try
             {
-                var result = await _challengeService.JoinChallengeAsync(id, userId);
+                var result = await _challengeService.JoinChallengeAsync(id, User.GetUserId());
                 if (!result) return NotFound(new { Message = "Challenge not found." });
                 return Ok();
             }
@@ -65,11 +66,11 @@ namespace SavageExpenseTracker.WebApi.Controllers
         }
         
         [HttpPost("{id}/leave")]
-        public async Task<IActionResult> Leave(long id, [FromBody] Guid userId)
+        public async Task<IActionResult> Leave(long id)
         {
             try
             {
-                var result = await _challengeService.LeaveChallengeAsync(id, userId);
+                var result = await _challengeService.LeaveChallengeAsync(id, User.GetUserId());
                 if (!result) return NotFound();
                 return Ok();
             }

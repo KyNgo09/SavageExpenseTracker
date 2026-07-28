@@ -4,6 +4,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using SavageExpenseTracker.Application.Interfaces;
+using SavageExpenseTracker.WebApi.Extensions;
 
 namespace SavageExpenseTracker.WebApi.Controllers
 {
@@ -19,29 +20,17 @@ namespace SavageExpenseTracker.WebApi.Controllers
             _friendshipService = friendshipService;
         }
 
-        private Guid GetCurrentUserId()
-        {
-            var userIdString = User.FindFirstValue(ClaimTypes.Name.Identifier);
-
-            if (Guid.TryParse(userIdString, out Guid userId))
-            {
-                return userId;
-            }
-            
-            throw new InvalidOperationException("Unable to determine current user."); 
-        }
-
         [HttpGet("friends")]
         public async Task<IActionResult> GetFriends()
         {
-            var friends = await _friendshipService.GetFriendsListAsync(GetCurrentUserId());
+            var friends = await _friendshipService.GetFriendsListAsync(User.GetUserId());
             return Ok(friends);
         }
 
         [HttpGet("requests")]
         public async Task<IActionResult> GetPendingRequests()
         {
-            var requests = await _friendshipService.GetPendingRequestsAsync(GetCurrentUserId());
+            var requests = await _friendshipService.GetPendingRequestsAsync(User.GetUserId());
             return Ok(requests);
         }
 
@@ -50,7 +39,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
         {
             try
             {
-                await _friendshipService.SendRequestAsync(GetCurrentUserId(), targetUserId);
+                await _friendshipService.SendRequestAsync(User.GetUserId(), targetUserId);
                 return Ok(new { Message = "Friend request sent." });
             }
             catch (InvalidOperationException ex) { return BadRequest(new { Message = ex.Message }); }
@@ -61,7 +50,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
         {
             try
             {
-                var success = await _friendshipService.AcceptRequestAsync(GetCurrentUserId(), id);
+                var success = await _friendshipService.AcceptRequestAsync(User.GetUserId(), id);
                 if (!success) return NotFound();
                 return Ok(new { Message = "Friend request accepted." });
             }
@@ -73,7 +62,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
         {
             try
             {
-                var success = await _friendshipService.RejectRequestAsync(GetCurrentUserId(), id);
+                var success = await _friendshipService.RejectRequestAsync(User.GetUserId(), id);
                 if (!success) return NotFound();
                 return Ok(new { Message = "Friend request rejected." });
             }
@@ -83,7 +72,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
         [HttpDelete("{friendId}")]
         public async Task<IActionResult> Unfriend(Guid friendId)
         {
-            var success = await _friendshipService.UnfriendAsync(GetCurrentUserId(), friendId);
+            var success = await _friendshipService.UnfriendAsync(User.GetUserId(), friendId);
             if (!success) return NotFound();
             return Ok(new { Message = "Friendship removed." });
         }
@@ -93,7 +82,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
         {
             try
             {
-                await _friendshipService.BlockUserAsync(GetCurrentUserId(), targetUserId);
+                await _friendshipService.BlockUserAsync(User.GetUserId(), targetUserId);
                 return Ok(new { Message = "User blocked." });
             }
             catch (InvalidOperationException ex) { return BadRequest(new { Message = ex.Message }); }
@@ -102,7 +91,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
         [HttpDelete("unblock/{targetUserId}")]
         public async Task<IActionResult> UnblockUser(Guid targetUserId)
         {
-            var success = await _friendshipService.UnblockUserAsync(GetCurrentUserId(), targetUserId);
+            var success = await _friendshipService.UnblockUserAsync(User.GetUserId(), targetUserId);
             if (!success) return NotFound();
             return Ok(new { Message = "User unblocked." });
         }

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SavageExpenseTracker.Application.Interfaces;
 using SavageExpenseTracker.Application.Dtos.User;
+using SavageExpenseTracker.WebApi.Extensions;
 
 namespace SavageExpenseTracker.WebApi.Controllers
 {
@@ -33,15 +34,15 @@ namespace SavageExpenseTracker.WebApi.Controllers
             return Ok(users);
         }
 
-        // GET: api/users/{id}
-        [HttpGet("{id}")]
+        // GET: api/users/me
+        [HttpGet("me")]
         [Authorize]
-        public async Task<ActionResult<UserDto>> GetById(Guid id)
+        public async Task<ActionResult<UserDto>> GetMe()
         {
-            var user = await _userService.GetUserByIdAsync(id);
+            var user = await _userService.GetUserByIdAsync(User.GetUserId());
             if (user == null)
             {
-                return NotFound(new { Message = $"Can't find user with ID: {id}" });
+                return NotFound(new { Message = "User not found" });
             }
             return Ok(user);
         }
@@ -53,7 +54,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
             try
             {
                 var createdUser = await _userService.RegisterUserAsync(createUserDto);
-                return CreatedAtAction(nameof(GetById), new { id = createdUser.Id }, createdUser);
+                return CreatedAtAction(nameof(GetMe), new { id = createdUser.Id }, createdUser);
             }
             catch (InvalidOperationException ex)
             {
@@ -140,6 +141,11 @@ namespace SavageExpenseTracker.WebApi.Controllers
         [Authorize]
         public async Task<IActionResult> ChangePassword(Guid id, [FromBody] ChangePasswordDto changePasswordDto)
         {
+            if (id != User.GetUserId())
+            {
+                return Forbid();
+            }
+            
             try
             {
                 var result = await _userService.ChangePasswordAsync(id, changePasswordDto);
@@ -168,11 +174,36 @@ namespace SavageExpenseTracker.WebApi.Controllers
             return Ok(users);
         }
 
+        // PUT: api/users/me
+        [HttpPut("me")]
+        [Authorize]
+        public async Task<IActionResult> UpdateMe(UpdateUserDto updateUserDto)
+        {
+            try
+            {
+                var result = await _userService.UpdateUserAsync(User.GetUserId(), updateUserDto);
+                if (!result)
+                {
+                    return NotFound(new { Message = $"Can't update user with ID: {User.GetUserId()}" });
+                }
+                return NoContent();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+        }
+
         // PUT: api/users/{id}
         [HttpPut("{id}")]
         [Authorize]
         public async Task<IActionResult> Update(Guid id, UpdateUserDto updateUserDto)
         {
+            if (id != User.GetUserId() && !User.IsInRole("Admin"))
+            {
+                return Forbid();
+            }
+
             try
             {
                 var result = await _userService.UpdateUserAsync(id, updateUserDto);

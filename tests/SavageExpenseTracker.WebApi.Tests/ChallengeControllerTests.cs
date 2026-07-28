@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using SavageExpenseTracker.Application.Dtos.Challenge;
@@ -15,11 +17,21 @@ namespace SavageExpenseTracker.WebApi.Tests
     {
         private readonly Mock<IChallengeService> _challengeServiceMock;
         private readonly ChallengeController _controller;
+        private readonly Guid _currentUserId;
 
         public ChallengeControllerTests()
         {
             _challengeServiceMock = new Mock<IChallengeService>();
             _controller = new ChallengeController(_challengeServiceMock.Object);
+            _currentUserId = Guid.NewGuid();
+
+            var claims = new[] { new Claim(ClaimTypes.NameIdentifier, _currentUserId.ToString()) };
+            var identity = new ClaimsIdentity(claims);
+            var user = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = user }
+            };
         }
 
         [Fact]
@@ -40,9 +52,6 @@ namespace SavageExpenseTracker.WebApi.Tests
             _challengeServiceMock.Setup(s => s.GetChallengeByIdAsync(1)).ReturnsAsync((ChallengeDto)null!);
             var result = await _controller.GetById(1);
             
-            // Depends on what controller actually returns. If it returns NotFound(new {Message="Challenge not found."})
-            // we should check ObjectResult. If it returns just NotFound(), it will be NotFoundResult.
-            // Based on analysis report, it might return an object result.
             if (result.Result is NotFoundObjectResult notFoundObj)
             {
                 notFoundObj.Value.Should().BeEquivalentTo(new { Message = "Challenge not found." });
@@ -91,10 +100,9 @@ namespace SavageExpenseTracker.WebApi.Tests
         [Fact]
         public async Task Join_ShouldReturnNotFound_WhenFalse()
         {
-            var userId = Guid.NewGuid();
-            _challengeServiceMock.Setup(s => s.JoinChallengeAsync(1, userId)).ReturnsAsync(false);
+            _challengeServiceMock.Setup(s => s.JoinChallengeAsync(1, _currentUserId)).ReturnsAsync(false);
             
-            var result = await _controller.Join(1, userId);
+            var result = await _controller.Join(1);
             
             var notFound = result.Should().BeOfType<NotFoundObjectResult>().Subject;
             notFound.Value.Should().BeEquivalentTo(new { Message = "Challenge not found." });
@@ -103,18 +111,16 @@ namespace SavageExpenseTracker.WebApi.Tests
         [Fact]
         public async Task Join_ShouldReturnOk_WhenTrue()
         {
-            var userId = Guid.NewGuid();
-            _challengeServiceMock.Setup(s => s.JoinChallengeAsync(1, userId)).ReturnsAsync(true);
-            var result = await _controller.Join(1, userId);
+            _challengeServiceMock.Setup(s => s.JoinChallengeAsync(1, _currentUserId)).ReturnsAsync(true);
+            var result = await _controller.Join(1);
             result.Should().BeOfType<OkResult>();
         }
 
         [Fact]
         public async Task Join_ShouldReturnBadRequest_OnException()
         {
-            var userId = Guid.NewGuid();
-            _challengeServiceMock.Setup(s => s.JoinChallengeAsync(1, userId)).ThrowsAsync(new InvalidOperationException("Error"));
-            var result = await _controller.Join(1, userId);
+            _challengeServiceMock.Setup(s => s.JoinChallengeAsync(1, _currentUserId)).ThrowsAsync(new InvalidOperationException("Error"));
+            var result = await _controller.Join(1);
             var badRequest = result.Should().BeOfType<BadRequestObjectResult>().Subject;
             badRequest.Value.Should().BeEquivalentTo(new { Message = "Error" });
         }
@@ -122,27 +128,24 @@ namespace SavageExpenseTracker.WebApi.Tests
         [Fact]
         public async Task Leave_ShouldReturnNotFound_WhenFalse()
         {
-            var userId = Guid.NewGuid();
-            _challengeServiceMock.Setup(s => s.LeaveChallengeAsync(1, userId)).ReturnsAsync(false);
-            var result = await _controller.Leave(1, userId);
+            _challengeServiceMock.Setup(s => s.LeaveChallengeAsync(1, _currentUserId)).ReturnsAsync(false);
+            var result = await _controller.Leave(1);
             result.Should().BeOfType<NotFoundResult>();
         }
 
         [Fact]
         public async Task Leave_ShouldReturnOk_WhenTrue()
         {
-            var userId = Guid.NewGuid();
-            _challengeServiceMock.Setup(s => s.LeaveChallengeAsync(1, userId)).ReturnsAsync(true);
-            var result = await _controller.Leave(1, userId);
+            _challengeServiceMock.Setup(s => s.LeaveChallengeAsync(1, _currentUserId)).ReturnsAsync(true);
+            var result = await _controller.Leave(1);
             result.Should().BeOfType<OkResult>();
         }
 
         [Fact]
         public async Task Leave_ShouldReturnBadRequest_OnException()
         {
-            var userId = Guid.NewGuid();
-            _challengeServiceMock.Setup(s => s.LeaveChallengeAsync(1, userId)).ThrowsAsync(new InvalidOperationException("Error"));
-            var result = await _controller.Leave(1, userId);
+            _challengeServiceMock.Setup(s => s.LeaveChallengeAsync(1, _currentUserId)).ThrowsAsync(new InvalidOperationException("Error"));
+            var result = await _controller.Leave(1);
             var badRequest = result.Should().BeOfType<BadRequestObjectResult>().Subject;
             badRequest.Value.Should().BeEquivalentTo(new { Message = "Error" });
         }

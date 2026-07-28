@@ -123,26 +123,46 @@ namespace SavageExpenseTracker.Application.Tests
         public async Task UpdateExpenseAsync_ShouldReturnFalse_WhenNotFound()
         {
             // Arrange
+            var userId = Guid.NewGuid();
             var updateDto = new UpdateExpenseDto { Amount = 100 };
             _expenseRepositoryMock.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync((Expense)null!);
 
             // Act
-            var result = await _expenseService.UpdateExpenseAsync(1, updateDto);
+            var result = await _expenseService.UpdateExpenseAsync(1, userId, updateDto);
 
             // Assert
             result.Should().BeFalse();
         }
 
         [Fact]
-        public async Task UpdateExpenseAsync_ShouldCalculateTimeWork_WhenSuccess()
+        public async Task UpdateExpenseAsync_ShouldThrowException_WhenUserDoesNotOwnExpense()
         {
             // Arrange
-            var updateDto = new UpdateExpenseDto { Amount = 1000 };
-            var expense = new Expense { Id = 1, AppliedHourlyRate = 200, Amount = 500 };
+            var userId = Guid.NewGuid();
+            var otherUserId = Guid.NewGuid();
+            var updateDto = new UpdateExpenseDto { Amount = 100 };
+            var expense = new Expense { Id = 1, UserId = otherUserId };
             _expenseRepositoryMock.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync(expense);
 
             // Act
-            var result = await _expenseService.UpdateExpenseAsync(1, updateDto);
+            Func<Task> act = async () => await _expenseService.UpdateExpenseAsync(1, userId, updateDto);
+
+            // Assert
+            await act.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("You do not have permission to update this expense.");
+        }
+
+        [Fact]
+        public async Task UpdateExpenseAsync_ShouldCalculateTimeWork_WhenSuccess()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var updateDto = new UpdateExpenseDto { Amount = 1000 };
+            var expense = new Expense { Id = 1, UserId = userId, AppliedHourlyRate = 200, Amount = 500 };
+            _expenseRepositoryMock.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync(expense);
+
+            // Act
+            var result = await _expenseService.UpdateExpenseAsync(1, userId, updateDto);
 
             // Assert
             result.Should().BeTrue();
@@ -155,24 +175,43 @@ namespace SavageExpenseTracker.Application.Tests
         public async Task DeleteExpenseAsync_ShouldReturnFalse_WhenNotFound()
         {
             // Arrange
+            var userId = Guid.NewGuid();
             _expenseRepositoryMock.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync((Expense)null!);
 
             // Act
-            var result = await _expenseService.DeleteExpenseAsync(1);
+            var result = await _expenseService.DeleteExpenseAsync(1, userId);
 
             // Assert
             result.Should().BeFalse();
         }
 
         [Fact]
-        public async Task DeleteExpenseAsync_ShouldDelete_WhenFound()
+        public async Task DeleteExpenseAsync_ShouldThrowException_WhenUserDoesNotOwnExpense()
         {
             // Arrange
-            var expense = new Expense { Id = 1 };
+            var userId = Guid.NewGuid();
+            var otherUserId = Guid.NewGuid();
+            var expense = new Expense { Id = 1, UserId = otherUserId };
             _expenseRepositoryMock.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync(expense);
 
             // Act
-            var result = await _expenseService.DeleteExpenseAsync(1);
+            Func<Task> act = async () => await _expenseService.DeleteExpenseAsync(1, userId);
+
+            // Assert
+            await act.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("You do not have permission to delete this expense.");
+        }
+
+        [Fact]
+        public async Task DeleteExpenseAsync_ShouldDelete_WhenFound()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var expense = new Expense { Id = 1, UserId = userId };
+            _expenseRepositoryMock.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync(expense);
+
+            // Act
+            var result = await _expenseService.DeleteExpenseAsync(1, userId);
 
             // Assert
             result.Should().BeTrue();

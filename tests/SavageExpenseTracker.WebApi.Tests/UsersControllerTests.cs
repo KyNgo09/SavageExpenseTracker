@@ -2,6 +2,7 @@ using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using SavageExpenseTracker.Application.Dtos.User;
@@ -18,6 +19,7 @@ namespace SavageExpenseTracker.WebApi.Tests
         private readonly Mock<ITokenService> _tokenServiceMock;
         private readonly Mock<IUserRepository> _userRepositoryMock;
         private readonly UsersController _controller;
+        private readonly Guid _currentUserId;
 
         public UsersControllerTests()
         {
@@ -28,6 +30,86 @@ namespace SavageExpenseTracker.WebApi.Tests
                 _userServiceMock.Object, 
                 _tokenServiceMock.Object, 
                 _userRepositoryMock.Object);
+            _currentUserId = Guid.NewGuid();
+
+            var claims = new[] { new Claim(ClaimTypes.NameIdentifier, _currentUserId.ToString()) };
+            var identity = new ClaimsIdentity(claims);
+            var user = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = user }
+            };
+        }
+
+        [Fact]
+        public async Task GetMe_ShouldReturnOk_WhenUserExists()
+        {
+            // Arrange
+            var userDto = new UserDto { Id = _currentUserId, Email = "me@test.com" };
+            _userServiceMock.Setup(s => s.GetUserByIdAsync(_currentUserId)).ReturnsAsync(userDto);
+
+            // Act
+            var result = await _controller.GetMe();
+
+            // Assert
+            var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
+            okResult.Value.Should().BeEquivalentTo(userDto);
+        }
+
+        [Fact]
+        public async Task GetMe_ShouldReturnNotFound_WhenUserIsNull()
+        {
+            // Arrange
+            _userServiceMock.Setup(s => s.GetUserByIdAsync(_currentUserId)).ReturnsAsync((UserDto)null!);
+
+            // Act
+            var result = await _controller.GetMe();
+
+            // Assert
+            var notFound = result.Result.Should().BeOfType<NotFoundObjectResult>().Subject;
+            notFound.Value.Should().BeEquivalentTo(new { Message = "User not found" });
+        }
+
+        [Fact]
+        public async Task UpdateMe_ShouldReturnNoContent_WhenUpdateSucceeds()
+        {
+            // Arrange
+            var updateDto = new UpdateUserDto { UserName = "UpdatedName" };
+            _userServiceMock.Setup(s => s.UpdateUserAsync(_currentUserId, updateDto)).ReturnsAsync(true);
+
+            // Act
+            var result = await _controller.UpdateMe(updateDto);
+
+            // Assert
+            result.Should().BeOfType<NoContentResult>();
+        }
+
+        [Fact]
+        public async Task Update_ShouldReturnForbid_WhenUserIsNotSelfAndNotAdmin()
+        {
+            // Arrange
+            var otherUserId = Guid.NewGuid();
+            var updateDto = new UpdateUserDto { UserName = "Malicious" };
+
+            // Act
+            var result = await _controller.Update(otherUserId, updateDto);
+
+            // Assert
+            result.Should().BeOfType<ForbidResult>();
+        }
+
+        [Fact]
+        public async Task ChangePassword_ShouldReturnForbid_WhenUserIsNotSelf()
+        {
+            // Arrange
+            var otherUserId = Guid.NewGuid();
+            var changePasswordDto = new ChangePasswordDto { OldPassword = "1", NewPassword = "2", ConfirmNewPassword = "2" };
+
+            // Act
+            var result = await _controller.ChangePassword(otherUserId, changePasswordDto);
+
+            // Assert
+            result.Should().BeOfType<ForbidResult>();
         }
 
         [Fact]

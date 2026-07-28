@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using SavageExpenseTracker.Application.Dtos.Expense;
 using SavageExpenseTracker.Application.Interfaces;
+using SavageExpenseTracker.WebApi.Extensions;
 
 namespace SavageExpenseTracker.WebApi.Controllers
 {
@@ -20,11 +21,11 @@ namespace SavageExpenseTracker.WebApi.Controllers
             _expenseService = expenseService;
         }
 
-        // GET: api/expenses/user/{userId}
-        [HttpGet("user/{userId}")]
-        public async Task<ActionResult<IEnumerable<ExpenseDto>>> GetUserExpenses(Guid userId)
+        // GET: api/expenses/me
+        [HttpGet("me")]
+        public async Task<ActionResult<IEnumerable<ExpenseDto>>> GetMyExpenses()
         {
-            var expenses = await _expenseService.GetUserExpensesAsync(userId);
+            var expenses = await _expenseService.GetUserExpensesAsync(User.GetUserId());
             return Ok(expenses);
         }
 
@@ -46,6 +47,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
         {
             try
             {
+                createExpenseDto.UserId = User.GetUserId();
                 var createdExpense = await _expenseService.CreateExpenseAsync(createExpenseDto);
                 return CreatedAtAction(nameof(GetById), new { id = createdExpense.Id }, createdExpense);
             }
@@ -61,7 +63,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
         {
             try
             {
-                var result = await _expenseService.UpdateExpenseAsync(id, updateExpenseDto);
+                var result = await _expenseService.UpdateExpenseAsync(id, User.GetUserId(), updateExpenseDto);
                 if (!result)
                 {
                     return NotFound(new { Message = "Expense Not Found" });
@@ -80,7 +82,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
         {
             try
             {
-                var result = await _expenseService.DeleteExpenseAsync(id);
+                var result = await _expenseService.DeleteExpenseAsync(id, User.GetUserId());
                 if (!result)
                 {
                     return NotFound(new { Message = $"Can't find Expense with Id: {id}" });

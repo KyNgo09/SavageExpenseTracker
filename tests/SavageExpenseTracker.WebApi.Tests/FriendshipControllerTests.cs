@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using SavageExpenseTracker.Application.Dtos.Friendship;
@@ -15,11 +17,21 @@ namespace SavageExpenseTracker.WebApi.Tests
     {
         private readonly Mock<IFriendshipService> _friendshipServiceMock;
         private readonly FriendshipController _controller;
+        private readonly Guid _currentUserId;
 
         public FriendshipControllerTests()
         {
             _friendshipServiceMock = new Mock<IFriendshipService>();
             _controller = new FriendshipController(_friendshipServiceMock.Object);
+            _currentUserId = Guid.NewGuid();
+
+            var claims = new[] { new Claim(ClaimTypes.NameIdentifier, _currentUserId.ToString()) };
+            var identity = new ClaimsIdentity(claims);
+            var user = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = user }
+            };
         }
 
         [Fact]
@@ -27,7 +39,7 @@ namespace SavageExpenseTracker.WebApi.Tests
         {
             // Arrange
             var friends = new List<UserProfileDto> { new UserProfileDto { Id = Guid.NewGuid(), UserName = "friend1" } };
-            _friendshipServiceMock.Setup(s => s.GetFriendsListAsync(It.IsAny<Guid>())).ReturnsAsync(friends);
+            _friendshipServiceMock.Setup(s => s.GetFriendsListAsync(_currentUserId)).ReturnsAsync(friends);
 
             // Act
             var result = await _controller.GetFriends();
@@ -42,7 +54,7 @@ namespace SavageExpenseTracker.WebApi.Tests
         {
             // Arrange
             var targetUserId = Guid.NewGuid();
-            _friendshipServiceMock.Setup(s => s.SendRequestAsync(It.IsAny<Guid>(), targetUserId)).ReturnsAsync(true);
+            _friendshipServiceMock.Setup(s => s.SendRequestAsync(_currentUserId, targetUserId)).ReturnsAsync(true);
 
             // Act
             var result = await _controller.SendRequest(targetUserId);
@@ -57,7 +69,7 @@ namespace SavageExpenseTracker.WebApi.Tests
         {
             // Arrange
             var targetUserId = Guid.NewGuid();
-            _friendshipServiceMock.Setup(s => s.SendRequestAsync(It.IsAny<Guid>(), targetUserId))
+            _friendshipServiceMock.Setup(s => s.SendRequestAsync(_currentUserId, targetUserId))
                 .ThrowsAsync(new InvalidOperationException("Error"));
 
             // Act
@@ -72,7 +84,7 @@ namespace SavageExpenseTracker.WebApi.Tests
         public async Task AcceptRequest_ShouldReturnNotFound_WhenServiceReturnsFalse()
         {
             // Arrange
-            _friendshipServiceMock.Setup(s => s.AcceptRequestAsync(It.IsAny<Guid>(), 1)).ReturnsAsync(false);
+            _friendshipServiceMock.Setup(s => s.AcceptRequestAsync(_currentUserId, 1)).ReturnsAsync(false);
 
             // Act
             var result = await _controller.AcceptRequest(1);
@@ -85,7 +97,7 @@ namespace SavageExpenseTracker.WebApi.Tests
         public async Task AcceptRequest_ShouldReturnOk_WhenServiceReturnsTrue()
         {
             // Arrange
-            _friendshipServiceMock.Setup(s => s.AcceptRequestAsync(It.IsAny<Guid>(), 1)).ReturnsAsync(true);
+            _friendshipServiceMock.Setup(s => s.AcceptRequestAsync(_currentUserId, 1)).ReturnsAsync(true);
 
             // Act
             var result = await _controller.AcceptRequest(1);
@@ -100,7 +112,7 @@ namespace SavageExpenseTracker.WebApi.Tests
         {
             // Arrange
             var friendId = Guid.NewGuid();
-            _friendshipServiceMock.Setup(s => s.UnfriendAsync(It.IsAny<Guid>(), friendId)).ReturnsAsync(false);
+            _friendshipServiceMock.Setup(s => s.UnfriendAsync(_currentUserId, friendId)).ReturnsAsync(false);
 
             // Act
             var result = await _controller.Unfriend(friendId);
@@ -114,7 +126,7 @@ namespace SavageExpenseTracker.WebApi.Tests
         {
             // Arrange
             var friendId = Guid.NewGuid();
-            _friendshipServiceMock.Setup(s => s.UnfriendAsync(It.IsAny<Guid>(), friendId)).ReturnsAsync(true);
+            _friendshipServiceMock.Setup(s => s.UnfriendAsync(_currentUserId, friendId)).ReturnsAsync(true);
 
             // Act
             var result = await _controller.Unfriend(friendId);
@@ -128,7 +140,7 @@ namespace SavageExpenseTracker.WebApi.Tests
         public async Task GetPendingRequests_ShouldReturnOk_WithRequestsList()
         {
             var requests = new List<FriendshipRequestDto> { new FriendshipRequestDto { FriendshipId = 1, SenderName = "sender" } };
-            _friendshipServiceMock.Setup(s => s.GetPendingRequestsAsync(It.IsAny<Guid>())).ReturnsAsync(requests);
+            _friendshipServiceMock.Setup(s => s.GetPendingRequestsAsync(_currentUserId)).ReturnsAsync(requests);
 
             var result = await _controller.GetPendingRequests();
 
@@ -139,7 +151,7 @@ namespace SavageExpenseTracker.WebApi.Tests
         [Fact]
         public async Task RejectRequest_ShouldReturnOk_WhenSuccess()
         {
-            _friendshipServiceMock.Setup(s => s.RejectRequestAsync(It.IsAny<Guid>(), 1)).ReturnsAsync(true);
+            _friendshipServiceMock.Setup(s => s.RejectRequestAsync(_currentUserId, 1)).ReturnsAsync(true);
             var result = await _controller.RejectRequest(1);
             var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
             okResult.Value.Should().BeEquivalentTo(new { Message = "Friend request rejected." });
@@ -148,7 +160,7 @@ namespace SavageExpenseTracker.WebApi.Tests
         [Fact]
         public async Task RejectRequest_ShouldReturnNotFound_WhenReturnsFalse()
         {
-            _friendshipServiceMock.Setup(s => s.RejectRequestAsync(It.IsAny<Guid>(), 1)).ReturnsAsync(false);
+            _friendshipServiceMock.Setup(s => s.RejectRequestAsync(_currentUserId, 1)).ReturnsAsync(false);
             var result = await _controller.RejectRequest(1);
             result.Should().BeOfType<NotFoundResult>();
         }
@@ -156,7 +168,7 @@ namespace SavageExpenseTracker.WebApi.Tests
         [Fact]
         public async Task RejectRequest_ShouldReturnBadRequest_OnException()
         {
-            _friendshipServiceMock.Setup(s => s.RejectRequestAsync(It.IsAny<Guid>(), 1)).ThrowsAsync(new InvalidOperationException("Error"));
+            _friendshipServiceMock.Setup(s => s.RejectRequestAsync(_currentUserId, 1)).ThrowsAsync(new InvalidOperationException("Error"));
             var result = await _controller.RejectRequest(1);
             var badRequestResult = result.Should().BeOfType<BadRequestObjectResult>().Subject;
             badRequestResult.Value.Should().BeEquivalentTo(new { Message = "Error" });
@@ -165,7 +177,7 @@ namespace SavageExpenseTracker.WebApi.Tests
         [Fact]
         public async Task AcceptRequest_ShouldReturnBadRequest_OnException()
         {
-            _friendshipServiceMock.Setup(s => s.AcceptRequestAsync(It.IsAny<Guid>(), 1)).ThrowsAsync(new InvalidOperationException("Error"));
+            _friendshipServiceMock.Setup(s => s.AcceptRequestAsync(_currentUserId, 1)).ThrowsAsync(new InvalidOperationException("Error"));
             var result = await _controller.AcceptRequest(1);
             var badRequestResult = result.Should().BeOfType<BadRequestObjectResult>().Subject;
             badRequestResult.Value.Should().BeEquivalentTo(new { Message = "Error" });
@@ -175,7 +187,7 @@ namespace SavageExpenseTracker.WebApi.Tests
         public async Task BlockUser_ShouldReturnOk_WhenSuccess()
         {
             var targetId = Guid.NewGuid();
-            _friendshipServiceMock.Setup(s => s.BlockUserAsync(It.IsAny<Guid>(), targetId)).ReturnsAsync(true);
+            _friendshipServiceMock.Setup(s => s.BlockUserAsync(_currentUserId, targetId)).ReturnsAsync(true);
             var result = await _controller.BlockUser(targetId);
             var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
             okResult.Value.Should().BeEquivalentTo(new { Message = "User blocked." });
@@ -185,7 +197,7 @@ namespace SavageExpenseTracker.WebApi.Tests
         public async Task BlockUser_ShouldReturnBadRequest_OnException()
         {
             var targetId = Guid.NewGuid();
-            _friendshipServiceMock.Setup(s => s.BlockUserAsync(It.IsAny<Guid>(), targetId)).ThrowsAsync(new InvalidOperationException("Error"));
+            _friendshipServiceMock.Setup(s => s.BlockUserAsync(_currentUserId, targetId)).ThrowsAsync(new InvalidOperationException("Error"));
             var result = await _controller.BlockUser(targetId);
             var badRequestResult = result.Should().BeOfType<BadRequestObjectResult>().Subject;
             badRequestResult.Value.Should().BeEquivalentTo(new { Message = "Error" });
@@ -195,7 +207,7 @@ namespace SavageExpenseTracker.WebApi.Tests
         public async Task UnblockUser_ShouldReturnOk_WhenSuccess()
         {
             var targetId = Guid.NewGuid();
-            _friendshipServiceMock.Setup(s => s.UnblockUserAsync(It.IsAny<Guid>(), targetId)).ReturnsAsync(true);
+            _friendshipServiceMock.Setup(s => s.UnblockUserAsync(_currentUserId, targetId)).ReturnsAsync(true);
             var result = await _controller.UnblockUser(targetId);
             var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
             okResult.Value.Should().BeEquivalentTo(new { Message = "User unblocked." });
@@ -205,7 +217,7 @@ namespace SavageExpenseTracker.WebApi.Tests
         public async Task UnblockUser_ShouldReturnNotFound_WhenReturnsFalse()
         {
             var targetId = Guid.NewGuid();
-            _friendshipServiceMock.Setup(s => s.UnblockUserAsync(It.IsAny<Guid>(), targetId)).ReturnsAsync(false);
+            _friendshipServiceMock.Setup(s => s.UnblockUserAsync(_currentUserId, targetId)).ReturnsAsync(false);
             var result = await _controller.UnblockUser(targetId);
             result.Should().BeOfType<NotFoundResult>();
         }
