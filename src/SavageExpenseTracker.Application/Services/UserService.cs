@@ -117,8 +117,7 @@ namespace SavageExpenseTracker.Application.Services
                 return null;
             }
 
-            var hashInput = PasswordHasher.HashPassword(loginDto.Password);
-            if (user.PasswordHash != hashInput)
+            if (!PasswordHasher.VerifyPassword(loginDto.Password, user.PasswordHash))
             {
                 return null;
             }
@@ -139,8 +138,7 @@ namespace SavageExpenseTracker.Application.Services
                 throw new InvalidOperationException("User not found!");
             }
 
-            var oldHash = PasswordHasher.HashPassword(changePasswordDto.OldPassword);
-            if (user.PasswordHash != oldHash)
+            if (!PasswordHasher.VerifyPassword(changePasswordDto.OldPassword, user.PasswordHash))
             {
                 throw new InvalidOperationException("Incorrect old password!");
             }

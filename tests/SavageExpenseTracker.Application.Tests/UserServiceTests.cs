@@ -175,7 +175,7 @@ namespace SavageExpenseTracker.Application.Tests
 
             // Assert
             result.Should().BeTrue();
-            user.PasswordHash.Should().Be(PasswordHasher.HashPassword("new"));
+            PasswordHasher.VerifyPassword("new", user.PasswordHash).Should().BeTrue();
             _userRepositoryMock.Verify(repo => repo.UpdateAsync(user), Times.Once);
         }
 
