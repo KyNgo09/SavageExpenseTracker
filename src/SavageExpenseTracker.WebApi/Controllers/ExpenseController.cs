@@ -34,9 +34,9 @@ namespace SavageExpenseTracker.WebApi.Controllers
         public async Task<ActionResult<ExpenseDto>> GetById(long id)
         {
             var expense = await _expenseService.GetExpenseByIdAsync(id);
-            if (expense == null)
+            if (expense == null || expense.UserId != User.GetUserId())
             {
-                return NotFound(new { Message = "Expense Not Found"});
+                return NotFound(new { Message = "Expense Not Found" });
             }
             return Ok(expense);
         }

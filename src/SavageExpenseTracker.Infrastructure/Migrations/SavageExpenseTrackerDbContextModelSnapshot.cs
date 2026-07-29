@@ -274,6 +274,9 @@ namespace SavageExpenseTracker.Infrastructure.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
+                    b.HasIndex("UserName")
+                        .IsUnique();
+
                     b.ToTable("users", (string)null);
                 });
 

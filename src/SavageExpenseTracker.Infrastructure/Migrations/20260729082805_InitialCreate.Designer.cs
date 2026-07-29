@@ -12,7 +12,7 @@ using SavageExpenseTracker.Infrastructure.Data;
 namespace SavageExpenseTracker.Infrastructure.Migrations
 {
     [DbContext(typeof(SavageExpenseTrackerDbContext))]
-    [Migration("20260716085052_InitialCreate")]
+    [Migration("20260729082805_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -275,6 +275,9 @@ namespace SavageExpenseTracker.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("UserName")
                         .IsUnique();
 
                     b.ToTable("users", (string)null);
