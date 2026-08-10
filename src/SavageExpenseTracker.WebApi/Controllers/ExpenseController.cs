@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using SavageExpenseTracker.Application.Dtos;
 using SavageExpenseTracker.Application.Dtos.Expense;
 using SavageExpenseTracker.Application.Interfaces;
 using SavageExpenseTracker.WebApi.Extensions;
@@ -21,12 +22,12 @@ namespace SavageExpenseTracker.WebApi.Controllers
             _expenseService = expenseService;
         }
 
-        // GET: api/expenses/me
+        // GET: api/expenses/me?pageNumber=1&pageSize=10
         [HttpGet("me")]
-        public async Task<ActionResult<IEnumerable<ExpenseDto>>> GetMyExpenses()
+        public async Task<ActionResult<PagedResultDto<ExpenseDto>>> GetMyExpenses([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var expenses = await _expenseService.GetUserExpensesAsync(User.GetUserId());
-            return Ok(expenses);
+            var pagedExpenses = await _expenseService.GetUserExpensesPagedAsync(User.GetUserId(), pageNumber, pageSize);
+            return Ok(pagedExpenses);
         }
 
         // GET: api/expenses/{id}
@@ -45,54 +46,33 @@ namespace SavageExpenseTracker.WebApi.Controllers
         [HttpPost]
         public async Task<ActionResult<ExpenseDto>> Create(CreateExpenseDto createExpenseDto)
         {
-            try
-            {
-                createExpenseDto.UserId = User.GetUserId();
-                var createdExpense = await _expenseService.CreateExpenseAsync(createExpenseDto);
-                return CreatedAtAction(nameof(GetById), new { id = createdExpense.Id }, createdExpense);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { Message = ex.Message });
-            }
+            createExpenseDto.UserId = User.GetUserId();
+            var createdExpense = await _expenseService.CreateExpenseAsync(createExpenseDto);
+            return CreatedAtAction(nameof(GetById), new { id = createdExpense.Id }, createdExpense);
         }
 
         // PUT: api/expenses/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(long id, UpdateExpenseDto updateExpenseDto)
         {
-            try
+            var result = await _expenseService.UpdateExpenseAsync(id, User.GetUserId(), updateExpenseDto);
+            if (!result)
             {
-                var result = await _expenseService.UpdateExpenseAsync(id, User.GetUserId(), updateExpenseDto);
-                if (!result)
-                {
-                    return NotFound(new { Message = "Expense Not Found" });
-                }
-                return NoContent();
+                return NotFound(new { Message = "Expense Not Found" });
             }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { Message = ex.Message });
-            }
+            return NoContent();
         }
 
         // DELETE: api/expenses/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(long id)
         {
-            try
+            var result = await _expenseService.DeleteExpenseAsync(id, User.GetUserId());
+            if (!result)
             {
-                var result = await _expenseService.DeleteExpenseAsync(id, User.GetUserId());
-                if (!result)
-                {
-                    return NotFound(new { Message = $"Can't find Expense with Id: {id}" });
-                }
-                return NoContent();
+                return NotFound(new { Message = $"Can't find Expense with Id: {id}" });
             }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { Message = ex.Message });
-            }
+            return NoContent();
         }
     }
 }

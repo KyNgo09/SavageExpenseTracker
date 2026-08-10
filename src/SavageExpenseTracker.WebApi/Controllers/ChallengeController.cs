@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using SavageExpenseTracker.Application.Interfaces;
+using SavageExpenseTracker.Application.Dtos;
 using SavageExpenseTracker.Application.Dtos.Challenge;
+using SavageExpenseTracker.Application.Interfaces;
 using SavageExpenseTracker.WebApi.Extensions;
 
 namespace SavageExpenseTracker.WebApi.Controllers
@@ -21,11 +22,12 @@ namespace SavageExpenseTracker.WebApi.Controllers
             _challengeService = challengeService;
         }
 
+        // GET: api/challenges?pageNumber=1&pageSize=10
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ChallengeDto>>> GetAll()
+        public async Task<ActionResult<PagedResultDto<ChallengeDto>>> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var result = await _challengeService.GetAllChallengesAsync();
-            return Ok(result);
+            var pagedChallenges = await _challengeService.GetChallengesPagedAsync(pageNumber, pageSize);
+            return Ok(pagedChallenges);
         }
 
         [HttpGet("{id}")]
@@ -39,45 +41,24 @@ namespace SavageExpenseTracker.WebApi.Controllers
         [HttpPost]
         public async Task<ActionResult<ChallengeDto>> Create(CreateChallengeDto dto)
         {
-            try
-            {
-                var result = await _challengeService.CreateChallengeAsync(dto);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { Message = ex.Message });
-            }
+            var result = await _challengeService.CreateChallengeAsync(dto);
+            return Ok(result);
         }
 
         [HttpPost("{id}/join")]
         public async Task<IActionResult> Join(long id)
         {
-            try
-            {
-                var result = await _challengeService.JoinChallengeAsync(id, User.GetUserId());
-                if (!result) return NotFound(new { Message = "Challenge not found." });
-                return Ok();
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { Message = ex.Message });
-            }
+            var result = await _challengeService.JoinChallengeAsync(id, User.GetUserId());
+            if (!result) return NotFound(new { Message = "Challenge not found." });
+            return Ok();
         }
         
         [HttpPost("{id}/leave")]
         public async Task<IActionResult> Leave(long id)
         {
-            try
-            {
-                var result = await _challengeService.LeaveChallengeAsync(id, User.GetUserId());
-                if (!result) return NotFound();
-                return Ok();
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { Message = ex.Message });
-            }
+            var result = await _challengeService.LeaveChallengeAsync(id, User.GetUserId());
+            if (!result) return NotFound();
+            return Ok();
         }
 
         [HttpGet("{id}/leaderboard")]

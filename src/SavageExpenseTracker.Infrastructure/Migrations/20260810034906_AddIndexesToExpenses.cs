@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace SavageExpenseTracker.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class AddIndexesToExpenses : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -188,9 +188,19 @@ namespace SavageExpenseTracker.Infrastructure.Migrations
                 column: "category_id");
 
             migrationBuilder.CreateIndex(
+                name: "IX_expenses_created_at",
+                table: "expenses",
+                column: "created_at");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_expenses_user_id",
                 table: "expenses",
                 column: "user_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_expenses_user_id_created_at",
+                table: "expenses",
+                columns: new[] { "user_id", "created_at" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_friendships_friend_id",

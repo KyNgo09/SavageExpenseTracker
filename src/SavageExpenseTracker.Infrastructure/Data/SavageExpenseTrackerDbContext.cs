@@ -55,6 +55,10 @@ namespace SavageExpenseTracker.Infrastructure.Data
                 entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
                 entity.Property(e => e.AppliedHourlyRate).HasColumnName("applied_hourly_rate").HasPrecision(18, 2).IsRequired();
                 entity.Property(e => e.CategoryId).HasColumnName("category_id").IsRequired();
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.CategoryId);
+                entity.HasIndex(e => e.CreatedAt);
+                entity.HasIndex(e => new { e.UserId, e.CreatedAt });
                 // Relationships
                 entity.HasOne(e => e.User)
                     .WithMany(u => u.Expenses)

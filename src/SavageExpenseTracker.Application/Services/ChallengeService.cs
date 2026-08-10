@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using SavageExpenseTracker.Application.Dtos;
 using SavageExpenseTracker.Application.Dtos.Challenge;
 using SavageExpenseTracker.Application.Interfaces;
 using SavageExpenseTracker.Application.Helpers;
@@ -30,6 +31,23 @@ namespace SavageExpenseTracker.Application.Services
             var challenges = await _challengeRepository.GetAllAsync();
             return challenges.Select(c => c.ToDto());
         }    
+
+        public async Task<PagedResultDto<ChallengeDto>> GetChallengesPagedAsync(int pageNumber, int pageSize)
+        {
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1) pageSize = 10;
+            if (pageSize > 100) pageSize = 100;
+
+            var (items, totalCount) = await _challengeRepository.GetPagedAsync(pageNumber, pageSize);
+
+            return new PagedResultDto<ChallengeDto>
+            {
+                Items = items.Select(c => c.ToDto()),
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+        }
 
         public async Task<ChallengeDto?> GetChallengeByIdAsync(long id)
         {
@@ -94,17 +112,20 @@ namespace SavageExpenseTracker.Application.Services
             var challenge = await _challengeRepository.GetByIdAsync(challengeId);
             if (challenge == null) return new List<LeaderboardItemDto>();
 
+            var memberIds = challenge.ChallengeMembers.Select(m => m.UserId).ToList();
+            if (!memberIds.Any()) return new List<LeaderboardItemDto>();
+
+            var allExpenses = await _expenseRepository.GetByUserAndDateRangeAsync(memberIds, challenge.DateStart, challenge.DateEnd);
+
+            var expensesByUser = allExpenses.GroupBy(e => e.UserId).ToDictionary(g => g.Key, g => g.ToList());
+
             var leaderboard = new List<LeaderboardItemDto>();
 
             foreach (var member in challenge.ChallengeMembers)
             {
-                var expenses = await _expenseRepository.GetByUserIdAsync(member.UserId);
-                
-                // Filter Expense within the challenge timeframe.
-                var validExpenses = expenses.Where(e => e.CreatedAt >= challenge.DateStart && e.CreatedAt <= challenge.DateEnd).ToList();
-                
-                var totalAmount = validExpenses.Sum(e => e.Amount);
-                var totalTimeWork = validExpenses.Sum(e => e.TimeWork);
+                var userExpenses = expensesByUser.TryGetValue(member.UserId, out var list) ? list : new List<Expense>();
+                var totalAmount = userExpenses.Sum(e => e.Amount);
+                var totalTimeWork = userExpenses.Sum(e => e.TimeWork);
 
                 leaderboard.Add(new LeaderboardItemDto
                 {

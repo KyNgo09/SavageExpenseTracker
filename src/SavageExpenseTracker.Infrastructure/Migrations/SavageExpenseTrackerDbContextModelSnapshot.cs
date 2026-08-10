@@ -177,7 +177,11 @@ namespace SavageExpenseTracker.Infrastructure.Migrations
 
                     b.HasIndex("CategoryId");
 
+                    b.HasIndex("CreatedAt");
+
                     b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "CreatedAt");
 
                     b.ToTable("expenses", (string)null);
                 });

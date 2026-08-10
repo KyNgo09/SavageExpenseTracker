@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SavageExpenseTracker.Application.Dtos;
 using SavageExpenseTracker.Application.Interfaces;
 using SavageExpenseTracker.Application.Dtos.User;
 using SavageExpenseTracker.WebApi.Extensions;
@@ -25,13 +26,13 @@ namespace SavageExpenseTracker.WebApi.Controllers
             _userRepository = userRepository;
         }
 
-        // GET: api/users
+        // GET: api/users?pageNumber=1&pageSize=10
         [HttpGet]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetAll()
+        public async Task<ActionResult<PagedResultDto<UserDto>>> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var users = await _userService.GetAllUserAsync();
-            return Ok(users);
+            var pagedUsers = await _userService.GetAllUsersPagedAsync(pageNumber, pageSize);
+            return Ok(pagedUsers);
         }
 
         // GET: api/users/me
@@ -51,15 +52,8 @@ namespace SavageExpenseTracker.WebApi.Controllers
         [HttpPost("register")]
         public async Task<ActionResult<UserDto>> Register(CreateUserDto createUserDto)
         {
-            try
-            {
-                var createdUser = await _userService.RegisterUserAsync(createUserDto);
-                return CreatedAtAction(nameof(GetMe), new { id = createdUser.Id }, createdUser);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { Message = ex.Message });
-            }
+            var createdUser = await _userService.RegisterUserAsync(createUserDto);
+            return CreatedAtAction(nameof(GetMe), new { id = createdUser.Id }, createdUser);
         }
 
         // POST: api/users/login
@@ -72,16 +66,14 @@ namespace SavageExpenseTracker.WebApi.Controllers
                 return Unauthorized(new { Message = "Invalid Email or Password"});
             }
 
-            // Generate access token and refresh token
             var userEntity = await _userRepository.GetByIdAsync(userDto.Id);
             if (userEntity == null) return BadRequest(new { Message = "User not found" });
 
             var accessToken = _tokenService.GenerateAccessToken(userEntity);
             var refreshToken = _tokenService.GenerateRefreshToken();
 
-            // Save the refresh token to the database
             userEntity.RefreshToken = refreshToken;
-            userEntity.RefreshTokenExpiryDate = DateTime.UtcNow.AddDays(7); // Set refresh token expiry time
+            userEntity.RefreshTokenExpiryDate = DateTime.UtcNow.AddDays(7);
             await _userRepository.UpdateAsync(userEntity);
 
             return Ok(new TokenResponseDto
@@ -145,33 +137,26 @@ namespace SavageExpenseTracker.WebApi.Controllers
             {
                 return Forbid();
             }
-            
-            try
+
+            var result = await _userService.ChangePasswordAsync(id, changePasswordDto);
+            if (!result)
             {
-                var result = await _userService.ChangePasswordAsync(id, changePasswordDto);
-                if (!result)
-                {
-                    return NotFound(new { Message = $"Can't change password for user with ID: {id}" });
-                }
-                return Ok(new { Message = "Change password successfully" });
+                return NotFound(new { Message = $"Can't change password for user with ID: {id}" });
             }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { Message = ex.Message });
-            }
+            return Ok(new { Message = "Change password successfully" });
         }
 
-        // GET: api/users/search?email={email}
+        // GET: api/users/search?email={email}&pageNumber=1&pageSize=10
         [HttpGet("search")]
         [Authorize]
-        public async Task<ActionResult<IEnumerable<UserDto>>> Search([FromQuery] string email)
+        public async Task<ActionResult<PagedResultDto<UserDto>>> Search([FromQuery] string email, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
             if (string.IsNullOrWhiteSpace(email))
             {
                 return BadRequest(new { Message = "Email can't be empty!"});
             }
-            var users = await _userService.SearchUserByEmailAsync(email);
-            return Ok(users);
+            var pagedUsers = await _userService.SearchUserByEmailPagedAsync(email, pageNumber, pageSize);
+            return Ok(pagedUsers);
         }
 
         // PUT: api/users/me
@@ -179,19 +164,12 @@ namespace SavageExpenseTracker.WebApi.Controllers
         [Authorize]
         public async Task<IActionResult> UpdateMe(UpdateUserDto updateUserDto)
         {
-            try
+            var result = await _userService.UpdateUserAsync(User.GetUserId(), updateUserDto);
+            if (!result)
             {
-                var result = await _userService.UpdateUserAsync(User.GetUserId(), updateUserDto);
-                if (!result)
-                {
-                    return NotFound(new { Message = $"Can't update user with ID: {User.GetUserId()}" });
-                }
-                return NoContent();
+                return NotFound(new { Message = $"Can't update user with ID: {User.GetUserId()}" });
             }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { Message = ex.Message });
-            }
+            return NoContent();
         }
 
         // PUT: api/users/{id}
@@ -204,19 +182,12 @@ namespace SavageExpenseTracker.WebApi.Controllers
                 return Forbid();
             }
 
-            try
+            var result = await _userService.UpdateUserAsync(id, updateUserDto);
+            if (!result)
             {
-                var result = await _userService.UpdateUserAsync(id, updateUserDto);
-                if (!result)
-                {
-                    return NotFound(new { Message = $"Can't update user with ID: {id}" });
-                }
-                return NoContent();
+                return NotFound(new { Message = $"Can't update user with ID: {id}" });
             }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { Message = ex.Message });
-            }
+            return NoContent();
         }
 
         // DELETE: api/users/{id}

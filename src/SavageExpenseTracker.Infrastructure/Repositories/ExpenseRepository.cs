@@ -26,6 +26,22 @@ namespace SavageExpenseTracker.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<(IEnumerable<Expense> Items, int TotalCount)> GetPagedByUserIdAsync(Guid userId, int pageNumber, int pageSize)
+        {
+            var query = _context.Expenses
+                .AsNoTracking()
+                .Where(e => e.UserId == userId);
+
+            var totalCount = await query.CountAsync();
+            var items = await query
+                .OrderByDescending(e => e.CreatedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (items, totalCount);
+        }
+
         public async Task<Expense?> GetByIdAsync(long id)
         {
             return await _context.Expenses.FindAsync(id);
@@ -50,6 +66,17 @@ namespace SavageExpenseTracker.Infrastructure.Repositories
                 _context.Expenses.Remove(expense);
                 await _context.SaveChangesAsync();
             }
+        }
+
+        public async Task<IEnumerable<Expense>> GetByUserAndDateRangeAsync(IEnumerable<Guid> userIds, DateTime startDate, DateTime endDate)
+        {
+            return await _context.Expenses
+                .AsNoTracking()
+                .Where(e => userIds.Contains(e.UserId)
+                    && e.CreatedAt >= startDate
+                    && e.CreatedAt <= endDate
+                )
+                .ToListAsync();
         }
     }
 }

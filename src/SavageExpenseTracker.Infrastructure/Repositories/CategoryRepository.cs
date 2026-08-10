@@ -21,6 +21,19 @@ namespace SavageExpenseTracker.Infrastructure.Repositories
             return await _context.Categories.ToListAsync();
         }
 
+        public async Task<(IEnumerable<Category> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize)
+        {
+            var query = _context.Categories.AsNoTracking();
+            var totalCount = await query.CountAsync();
+            var items = await query
+                .OrderBy(c => c.Name)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (items, totalCount);
+        }
+
         public async Task<Category?> GetByIdAsync(long id)
         {
             return await _context.Categories.FindAsync(id);

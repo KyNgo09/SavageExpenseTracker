@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using SavageExpenseTracker.Application.Dtos;
 using SavageExpenseTracker.Application.Dtos.Friendship;
 
 namespace SavageExpenseTracker.Application.Interfaces
@@ -15,6 +16,8 @@ namespace SavageExpenseTracker.Application.Interfaces
         Task<bool> UnblockUserAsync(Guid currentUserId, Guid targetUserId);
 
         Task<IEnumerable<UserProfileDto>> GetFriendsListAsync(Guid currentUserId);
+        Task<PagedResultDto<UserProfileDto>> GetFriendsListPagedAsync(Guid currentUserId, int pageNumber, int pageSize);
         Task<IEnumerable<FriendshipRequestDto>> GetPendingRequestsAsync(Guid currentUserId);
+        Task<PagedResultDto<FriendshipRequestDto>> GetPendingRequestsPagedAsync(Guid currentUserId, int pageNumber, int pageSize);
     }
 }

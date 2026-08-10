@@ -12,8 +12,8 @@ using SavageExpenseTracker.Infrastructure.Data;
 namespace SavageExpenseTracker.Infrastructure.Migrations
 {
     [DbContext(typeof(SavageExpenseTrackerDbContext))]
-    [Migration("20260729082805_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260810034906_AddIndexesToExpenses")]
+    partial class AddIndexesToExpenses
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -180,7 +180,11 @@ namespace SavageExpenseTracker.Infrastructure.Migrations
 
                     b.HasIndex("CategoryId");
 
+                    b.HasIndex("CreatedAt");
+
                     b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "CreatedAt");
 
                     b.ToTable("expenses", (string)null);
                 });

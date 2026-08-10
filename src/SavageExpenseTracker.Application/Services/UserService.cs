@@ -4,11 +4,11 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using SavageExpenseTracker.Application.Dtos;
 using SavageExpenseTracker.Application.Dtos.User;
 using SavageExpenseTracker.Application.Interfaces;
 using SavageExpenseTracker.Application.Helpers;
 using SavageExpenseTracker.Domain.Entities;
-
 
 namespace SavageExpenseTracker.Application.Services
 {
@@ -25,6 +25,23 @@ namespace SavageExpenseTracker.Application.Services
         {
             var users = await _userRepository.GetAllAsync();
             return users.Select(u => u.ToDto());
+        }
+
+        public async Task<PagedResultDto<UserDto>> GetAllUsersPagedAsync(int pageNumber, int pageSize)
+        {
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1) pageSize = 10;
+            if (pageSize > 100) pageSize = 100;
+
+            var (items, totalCount) = await _userRepository.GetPagedAsync(pageNumber, pageSize);
+
+            return new PagedResultDto<UserDto>
+            {
+                Items = items.Select(u => u.ToDto()),
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
         }
 
         public async Task<UserDto?> GetUserByIdAsync(Guid id)
@@ -144,15 +161,46 @@ namespace SavageExpenseTracker.Application.Services
             }
 
             user.PasswordHash = PasswordHasher.HashPassword(changePasswordDto.NewPassword);
+            user.RefreshToken = null;
+            user.RefreshTokenExpiryDate = null;
+            
             await _userRepository.UpdateAsync(user);
             return true;
         }
 
         public async Task<IEnumerable<UserDto>> SearchUserByEmailAsync(string query)
         {
-            var allUsers = await _userRepository.GetAllAsync();
-            var matchedUsers = allUsers.Where(u => u.Email.Contains(query, StringComparison.OrdinalIgnoreCase));
+            if (string.IsNullOrWhiteSpace(query)) return Enumerable.Empty<UserDto>();
+            var matchedUsers = await _userRepository.SearchByEmailAsync(query);
             return matchedUsers.Select(u => u.ToDto());
+        }
+
+        public async Task<PagedResultDto<UserDto>> SearchUserByEmailPagedAsync(string query, int pageNumber, int pageSize)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return new PagedResultDto<UserDto>
+                {
+                    Items = Enumerable.Empty<UserDto>(),
+                    TotalCount = 0,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                };
+            }
+
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1) pageSize = 10;
+            if (pageSize > 100) pageSize = 100;
+
+            var (items, totalCount) = await _userRepository.SearchByEmailPagedAsync(query, pageNumber, pageSize);
+
+            return new PagedResultDto<UserDto>
+            {
+                Items = items.Select(u => u.ToDto()),
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
         }
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using SavageExpenseTracker.Application.Dtos;
 using SavageExpenseTracker.Application.Dtos.Category;
 using SavageExpenseTracker.Application.Helpers;
 using SavageExpenseTracker.Application.Interfaces;
@@ -22,6 +23,23 @@ namespace SavageExpenseTracker.Application.Services
         {
             var categories = await _categoryRepository.GetAllAsync();
             return categories.Select(c => c.ToDto());
+        }
+
+        public async Task<PagedResultDto<CategoryDto>> GetCategoriesPagedAsync(int pageNumber, int pageSize)
+        {
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1) pageSize = 10;
+            if (pageSize > 100) pageSize = 100;
+
+            var (items, totalCount) = await _categoryRepository.GetPagedAsync(pageNumber, pageSize);
+
+            return new PagedResultDto<CategoryDto>
+            {
+                Items = items.Select(c => c.ToDto()),
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
         }
 
         public async Task<CategoryDto?> GetCategoryByIdAsync(long id)

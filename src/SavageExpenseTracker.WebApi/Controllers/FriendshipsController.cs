@@ -20,53 +20,43 @@ namespace SavageExpenseTracker.WebApi.Controllers
             _friendshipService = friendshipService;
         }
 
+        // GET: api/friendships/friends?pageNumber=1&pageSize=10
         [HttpGet("friends")]
-        public async Task<IActionResult> GetFriends()
+        public async Task<IActionResult> GetFriends([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var friends = await _friendshipService.GetFriendsListAsync(User.GetUserId());
-            return Ok(friends);
+            var pagedFriends = await _friendshipService.GetFriendsListPagedAsync(User.GetUserId(), pageNumber, pageSize);
+            return Ok(pagedFriends);
         }
 
+        // GET: api/friendships/requests?pageNumber=1&pageSize=10
         [HttpGet("requests")]
-        public async Task<IActionResult> GetPendingRequests()
+        public async Task<IActionResult> GetPendingRequests([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var requests = await _friendshipService.GetPendingRequestsAsync(User.GetUserId());
-            return Ok(requests);
+            var pagedRequests = await _friendshipService.GetPendingRequestsPagedAsync(User.GetUserId(), pageNumber, pageSize);
+            return Ok(pagedRequests);
         }
 
         [HttpPost("request/{targetUserId}")]
         public async Task<IActionResult> SendRequest(Guid targetUserId)
         {
-            try
-            {
-                await _friendshipService.SendRequestAsync(User.GetUserId(), targetUserId);
-                return Ok(new { Message = "Friend request sent." });
-            }
-            catch (InvalidOperationException ex) { return BadRequest(new { Message = ex.Message }); }
+            await _friendshipService.SendRequestAsync(User.GetUserId(), targetUserId);
+            return Ok(new { Message = "Friend request sent." });
         }
 
         [HttpPut("accept/{id}")]
         public async Task<IActionResult> AcceptRequest(long id)
         {
-            try
-            {
-                var success = await _friendshipService.AcceptRequestAsync(User.GetUserId(), id);
-                if (!success) return NotFound();
-                return Ok(new { Message = "Friend request accepted." });
-            }
-            catch (InvalidOperationException ex) { return BadRequest(new { Message = ex.Message }); }
+            var success = await _friendshipService.AcceptRequestAsync(User.GetUserId(), id);
+            if (!success) return NotFound();
+            return Ok(new { Message = "Friend request accepted." });
         }
 
         [HttpDelete("reject/{id}")]
         public async Task<IActionResult> RejectRequest(long id)
         {
-            try
-            {
-                var success = await _friendshipService.RejectRequestAsync(User.GetUserId(), id);
-                if (!success) return NotFound();
-                return Ok(new { Message = "Friend request rejected." });
-            }
-            catch (InvalidOperationException ex) { return BadRequest(new { Message = ex.Message }); }
+            var success = await _friendshipService.RejectRequestAsync(User.GetUserId(), id);
+            if (!success) return NotFound();
+            return Ok(new { Message = "Friend request rejected." });
         }
 
         [HttpDelete("{friendId}")]
@@ -80,12 +70,8 @@ namespace SavageExpenseTracker.WebApi.Controllers
         [HttpPost("block/{targetUserId}")]
         public async Task<IActionResult> BlockUser(Guid targetUserId)
         {
-            try
-            {
-                await _friendshipService.BlockUserAsync(User.GetUserId(), targetUserId);
-                return Ok(new { Message = "User blocked." });
-            }
-            catch (InvalidOperationException ex) { return BadRequest(new { Message = ex.Message }); }
+            await _friendshipService.BlockUserAsync(User.GetUserId(), targetUserId);
+            return Ok(new { Message = "User blocked." });
         }
 
         [HttpDelete("unblock/{targetUserId}")]

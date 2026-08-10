@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using SavageExpenseTracker.Application.Dtos;
 using SavageExpenseTracker.Application.Dtos.Expense;
 using SavageExpenseTracker.Application.Helpers;
 using SavageExpenseTracker.Application.Interfaces;
@@ -24,6 +25,23 @@ namespace SavageExpenseTracker.Application.Services
         {
             var expenses = await _expenseRepository.GetByUserIdAsync(userId);
             return expenses.Select(e => e.ToDto());
+        }
+
+        public async Task<PagedResultDto<ExpenseDto>> GetUserExpensesPagedAsync(Guid userId, int pageNumber, int pageSize)
+        {
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1) pageSize = 10;
+            if (pageSize > 100) pageSize = 100;
+
+            var (items, totalCount) = await _expenseRepository.GetPagedByUserIdAsync(userId, pageNumber, pageSize);
+
+            return new PagedResultDto<ExpenseDto>
+            {
+                Items = items.Select(e => e.ToDto()),
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
         }
 
         public async Task<ExpenseDto?> GetExpenseByIdAsync(long id)

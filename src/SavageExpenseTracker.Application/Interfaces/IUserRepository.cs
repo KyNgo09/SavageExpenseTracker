@@ -9,6 +9,7 @@ namespace SavageExpenseTracker.Application.Interfaces
     {
         // Get Methods
         Task<IEnumerable<User>> GetAllAsync();
+        Task<(IEnumerable<User> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize);
         Task<User?> GetByIdAsync(Guid id);
         Task<User?> GetByEmailAsync(string email);
         Task<User?> GetByUserNameAsync(string username);
@@ -21,5 +22,8 @@ namespace SavageExpenseTracker.Application.Interfaces
         // Exist Methods
         Task<bool> EmailExistsAsync(string email);
         Task<bool> UserNameExistsAsync(string username);
+
+        Task<IEnumerable<User>> SearchByEmailAsync(string query);
+        Task<(IEnumerable<User> Items, int TotalCount)> SearchByEmailPagedAsync(string query, int pageNumber, int pageSize);
     }
 }

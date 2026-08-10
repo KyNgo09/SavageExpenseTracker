@@ -22,6 +22,19 @@ namespace SavageExpenseTracker.Infrastructure.Repositories
             return await _context.Users.ToListAsync();
         }
 
+        public async Task<(IEnumerable<User> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize)
+        {
+            var query = _context.Users.AsNoTracking();
+            var totalCount = await query.CountAsync();
+            var items = await query
+                .OrderByDescending(u => u.CreatedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (items, totalCount);
+        }
+
         public async Task<User?> GetByIdAsync(Guid id)
         {
             return await _context.Users.FindAsync(id);
@@ -66,6 +79,30 @@ namespace SavageExpenseTracker.Infrastructure.Repositories
         public async Task<bool> UserNameExistsAsync(string username)
         {
             return await _context.Users.AnyAsync(u => u.UserName == username);
+        }
+
+        public async Task<IEnumerable<User>> SearchByEmailAsync(string query)
+        {
+            return await _context.Users
+                .AsNoTracking()
+                .Where(u => EF.Functions.ILike(u.Email, $"%{query}%"))
+                .ToListAsync();
+        }
+
+        public async Task<(IEnumerable<User> Items, int TotalCount)> SearchByEmailPagedAsync(string query, int pageNumber, int pageSize)
+        {
+            var dbQuery = _context.Users
+                .AsNoTracking()
+                .Where(u => EF.Functions.ILike(u.Email, $"%{query}%"));
+
+            var totalCount = await dbQuery.CountAsync();
+            var items = await dbQuery
+                .OrderBy(u => u.Email)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (items, totalCount);
         }
     }
 }

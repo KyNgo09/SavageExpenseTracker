@@ -23,6 +23,19 @@ namespace SavageExpenseTracker.Infrastructure.Repositories
             return await _context.Challenges.ToListAsync();
         }
 
+        public async Task<(IEnumerable<Challenge> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize)
+        {
+            var query = _context.Challenges.AsNoTracking();
+            var totalCount = await query.CountAsync();
+            var items = await query
+                .OrderByDescending(c => c.CreatedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (items, totalCount);
+        }
+
         public async Task<Challenge?> GetByIdAsync(long id)
         {
             return await _context.Challenges.Include(c => c.ChallengeMembers).FirstOrDefaultAsync(c => c.Id == id);

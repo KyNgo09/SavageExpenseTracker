@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using SavageExpenseTracker.Application.Dtos;
 using SavageExpenseTracker.Application.Dtos.Friendship;
 using SavageExpenseTracker.Application.Interfaces;
 using SavageExpenseTracker.Domain.Entities;
@@ -140,6 +141,34 @@ namespace SavageExpenseTracker.Application.Services
            });
         }
 
+        public async Task<PagedResultDto<UserProfileDto>> GetFriendsListPagedAsync(Guid currentUserId, int pageNumber, int pageSize)
+        {
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1) pageSize = 10;
+            if (pageSize > 100) pageSize = 100;
+
+            var (items, totalCount) = await _friendshipRepository.GetFriendsPagedAsync(currentUserId, pageNumber, pageSize);
+
+            var dtos = items.Select(f =>
+            {
+                var friendInfo = f.UserId == currentUserId ? f.Friend : f.User;
+                return new UserProfileDto
+                {
+                    Id = friendInfo!.Id,
+                    UserName = friendInfo.UserName,
+                    Email = friendInfo.Email
+                };
+            });
+
+            return new PagedResultDto<UserProfileDto>
+            {
+                Items = dtos,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+        }
+
         public async Task<IEnumerable<FriendshipRequestDto>> GetPendingRequestsAsync(Guid currentUserId)
         {
             var requests = await _friendshipRepository.GetPendingRequestsAsync(currentUserId);
@@ -151,6 +180,31 @@ namespace SavageExpenseTracker.Application.Services
                 SenderName = f.User.UserName,
                 SentAt = f.CreatedAt
             });
+        }
+
+        public async Task<PagedResultDto<FriendshipRequestDto>> GetPendingRequestsPagedAsync(Guid currentUserId, int pageNumber, int pageSize)
+        {
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1) pageSize = 10;
+            if (pageSize > 100) pageSize = 100;
+
+            var (items, totalCount) = await _friendshipRepository.GetPendingRequestsPagedAsync(currentUserId, pageNumber, pageSize);
+
+            var dtos = items.Select(f => new FriendshipRequestDto
+            {
+                FriendshipId = f.Id,
+                SenderId = f.User!.Id,
+                SenderName = f.User.UserName,
+                SentAt = f.CreatedAt
+            });
+
+            return new PagedResultDto<FriendshipRequestDto>
+            {
+                Items = dtos,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
         }
     }
 }

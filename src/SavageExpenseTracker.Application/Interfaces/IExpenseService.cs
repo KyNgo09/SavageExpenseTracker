@@ -8,6 +8,7 @@ namespace SavageExpenseTracker.Application.Interfaces
     public interface IExpenseService
     {
         Task<IEnumerable<ExpenseDto>> GetUserExpensesAsync(Guid userId);
+        Task<PagedResultDto<ExpenseDto>> GetUserExpensesPagedAsync(Guid userId, int pageNumber, int pageSize);
         Task<ExpenseDto?> GetExpenseByIdAsync(long id);
         Task<ExpenseDto> CreateExpenseAsync(CreateExpenseDto createExpenseDto);
         Task<bool> UpdateExpenseAsync(long id, Guid currentUserId, UpdateExpenseDto updateExpenseDto);

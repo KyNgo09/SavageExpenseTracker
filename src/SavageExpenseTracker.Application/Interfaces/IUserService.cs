@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using SavageExpenseTracker.Application.Dtos;
 using SavageExpenseTracker.Application.Dtos.User;
 
 namespace SavageExpenseTracker.Application.Interfaces
@@ -9,6 +10,7 @@ namespace SavageExpenseTracker.Application.Interfaces
     {
         // Get Methods
         Task<IEnumerable<UserDto>> GetAllUserAsync();
+        Task<PagedResultDto<UserDto>> GetAllUsersPagedAsync(int pageNumber, int pageSize);
         Task<UserDto?> GetUserByIdAsync(Guid id);
         Task<UserDto?> GetUserByEmailAsync(string email);
         Task<UserDto?> GetUserByUserNameAsync(string username);
@@ -28,5 +30,6 @@ namespace SavageExpenseTracker.Application.Interfaces
         
         // Search Methods
         Task<IEnumerable<UserDto>> SearchUserByEmailAsync(string query);
+        Task<PagedResultDto<UserDto>> SearchUserByEmailPagedAsync(string query, int pageNumber, int pageSize);
     }
 }

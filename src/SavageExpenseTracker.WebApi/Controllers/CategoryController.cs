@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using SavageExpenseTracker.Application.Dtos;
 using SavageExpenseTracker.Application.Dtos.Category;
 using SavageExpenseTracker.Application.Interfaces;
 
@@ -20,12 +21,12 @@ namespace SavageExpenseTracker.WebApi.Controllers
             _categoryService = categoryService;
         }
 
-        // GET: api/categories
+        // GET: api/categories?pageNumber=1&pageSize=10
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<CategoryDto>>> GetAll()
+        public async Task<ActionResult<PagedResultDto<CategoryDto>>> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var categories = await _categoryService.GetAllCategoriesAsync();
-            return Ok(categories);
+            var pagedCategories = await _categoryService.GetCategoriesPagedAsync(pageNumber, pageSize);
+            return Ok(pagedCategories);
         }
 
         // GET: api/categories/{id}
@@ -42,47 +43,26 @@ namespace SavageExpenseTracker.WebApi.Controllers
         [HttpPost]
         public async Task<ActionResult<CategoryDto>> Create(CreateCategoryDto createCategoryDto)
         {
-            try
-            {
-                var created = await _categoryService.CreateCategoryAsync(createCategoryDto);
-                return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
-            }
-            catch(Exception ex)
-            {
-                return BadRequest(new { Message = ex.Message });
-            }
+            var created = await _categoryService.CreateCategoryAsync(createCategoryDto);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
         // PUT: api/categories/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(long id, UpdateCategoryDto updateCategoryDto)
         {
-            try
-            {
-                var result = await _categoryService.UpdateCategoryAsync(id, updateCategoryDto);
-                if(!result) return NotFound(new { Message = "Category Not Found" });
-                return NoContent();
-            }
-            catch(Exception ex)
-            {
-                return BadRequest(new { Message = ex.Message });
-            }
+            var result = await _categoryService.UpdateCategoryAsync(id, updateCategoryDto);
+            if (!result) return NotFound(new { Message = "Category Not Found" });
+            return NoContent();
         }
 
         // DELETE: api/categories/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(long id)
         {
-            try
-            {
-                var result = await _categoryService.DeleteCategoryAsync(id);
-                if(!result) return NotFound(new { Message = "Category Not Found" });
-                return NoContent();
-            }
-            catch(InvalidOperationException ex)
-            {
-                return BadRequest(new { Message = ex.Message });
-            }
+            var result = await _categoryService.DeleteCategoryAsync(id);
+            if (!result) return NotFound(new { Message = "Category Not Found" });
+            return NoContent();
         }
     }
 }
