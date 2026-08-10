@@ -19,13 +19,7 @@ namespace SavageExpenseTracker.Application.Services
             _categoryRepository = categoryRepository;
         }
 
-        public async Task<IEnumerable<CategoryDto>> GetAllCategoriesAsync()
-        {
-            var categories = await _categoryRepository.GetAllAsync();
-            return categories.Select(c => c.ToDto());
-        }
-
-        public async Task<PagedResultDto<CategoryDto>> GetCategoriesPagedAsync(int pageNumber, int pageSize)
+        public async Task<PagedResultDto<CategoryDto>> GetAllCategoriesAsync(int pageNumber, int pageSize)
         {
             if (pageNumber < 1) pageNumber = 1;
             if (pageSize < 1) pageSize = 10;

@@ -21,13 +21,7 @@ namespace SavageExpenseTracker.Application.Services
             _userRepository = userRepository;
         }
 
-        public async Task<IEnumerable<ExpenseDto>> GetUserExpensesAsync(Guid userId)
-        {
-            var expenses = await _expenseRepository.GetByUserIdAsync(userId);
-            return expenses.Select(e => e.ToDto());
-        }
-
-        public async Task<PagedResultDto<ExpenseDto>> GetUserExpensesPagedAsync(Guid userId, int pageNumber, int pageSize)
+        public async Task<PagedResultDto<ExpenseDto>> GetUserExpensesAsync(Guid userId, int pageNumber, int pageSize)
         {
             if (pageNumber < 1) pageNumber = 1;
             if (pageSize < 1) pageSize = 10;

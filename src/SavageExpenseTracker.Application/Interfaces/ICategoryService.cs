@@ -7,8 +7,7 @@ namespace SavageExpenseTracker.Application.Interfaces
 {
     public interface ICategoryService
     {
-        Task<IEnumerable<CategoryDto>> GetAllCategoriesAsync();
-        Task<PagedResultDto<CategoryDto>> GetCategoriesPagedAsync(int pageNumber, int pageSize);
+        Task<PagedResultDto<CategoryDto>> GetAllCategoriesAsync(int pageNumber, int pageSize);
         Task<CategoryDto?> GetCategoryByIdAsync(long id);
         Task<CategoryDto> CreateCategoryAsync(CreateCategoryDto createCategoryDto);
         Task<bool> UpdateCategoryAsync(long id, UpdateCategoryDto updateCategoryDto);

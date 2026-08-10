@@ -26,13 +26,7 @@ namespace SavageExpenseTracker.Application.Services
             _notificationService = notificationService;
         }
         
-        public async Task<IEnumerable<ChallengeDto>> GetAllChallengesAsync()
-        {
-            var challenges = await _challengeRepository.GetAllAsync();
-            return challenges.Select(c => c.ToDto());
-        }    
-
-        public async Task<PagedResultDto<ChallengeDto>> GetChallengesPagedAsync(int pageNumber, int pageSize)
+        public async Task<PagedResultDto<ChallengeDto>> GetAllChallengesAsync(int pageNumber, int pageSize)
         {
             if (pageNumber < 1) pageNumber = 1;
             if (pageSize < 1) pageSize = 10;

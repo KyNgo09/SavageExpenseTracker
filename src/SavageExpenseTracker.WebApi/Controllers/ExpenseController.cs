@@ -26,7 +26,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
         [HttpGet("me")]
         public async Task<ActionResult<PagedResultDto<ExpenseDto>>> GetMyExpenses([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var pagedExpenses = await _expenseService.GetUserExpensesPagedAsync(User.GetUserId(), pageNumber, pageSize);
+            var pagedExpenses = await _expenseService.GetUserExpensesAsync(User.GetUserId(), pageNumber, pageSize);
             return Ok(pagedExpenses);
         }
 

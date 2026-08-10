@@ -125,23 +125,7 @@ namespace SavageExpenseTracker.Application.Services
             return true;
         }
 
-        public async Task<IEnumerable<UserProfileDto>> GetFriendsListAsync(Guid currentUserId)
-        {
-           var friendships = await _friendshipRepository.GetFriendsAsync(currentUserId);
-
-           return friendships.Select(f => 
-           {
-                var friendInfo = f.UserId == currentUserId ? f.Friend : f.User;
-                return new UserProfileDto
-                {
-                    Id = friendInfo!.Id,
-                    UserName = friendInfo.UserName,
-                    Email = friendInfo.Email
-                };
-           });
-        }
-
-        public async Task<PagedResultDto<UserProfileDto>> GetFriendsListPagedAsync(Guid currentUserId, int pageNumber, int pageSize)
+        public async Task<PagedResultDto<UserProfileDto>> GetFriendsListAsync(Guid currentUserId, int pageNumber, int pageSize)
         {
             if (pageNumber < 1) pageNumber = 1;
             if (pageSize < 1) pageSize = 10;
@@ -169,20 +153,7 @@ namespace SavageExpenseTracker.Application.Services
             };
         }
 
-        public async Task<IEnumerable<FriendshipRequestDto>> GetPendingRequestsAsync(Guid currentUserId)
-        {
-            var requests = await _friendshipRepository.GetPendingRequestsAsync(currentUserId);
-
-            return requests.Select(f => new FriendshipRequestDto
-            {
-                FriendshipId = f.Id,
-                SenderId = f.User!.Id,
-                SenderName = f.User.UserName,
-                SentAt = f.CreatedAt
-            });
-        }
-
-        public async Task<PagedResultDto<FriendshipRequestDto>> GetPendingRequestsPagedAsync(Guid currentUserId, int pageNumber, int pageSize)
+        public async Task<PagedResultDto<FriendshipRequestDto>> GetPendingRequestsAsync(Guid currentUserId, int pageNumber, int pageSize)
         {
             if (pageNumber < 1) pageNumber = 1;
             if (pageSize < 1) pageSize = 10;

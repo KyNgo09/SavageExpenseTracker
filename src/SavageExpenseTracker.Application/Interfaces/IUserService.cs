@@ -9,8 +9,7 @@ namespace SavageExpenseTracker.Application.Interfaces
     public interface IUserService
     {
         // Get Methods
-        Task<IEnumerable<UserDto>> GetAllUserAsync();
-        Task<PagedResultDto<UserDto>> GetAllUsersPagedAsync(int pageNumber, int pageSize);
+        Task<PagedResultDto<UserDto>> GetAllUsersAsync(int pageNumber, int pageSize);
         Task<UserDto?> GetUserByIdAsync(Guid id);
         Task<UserDto?> GetUserByEmailAsync(string email);
         Task<UserDto?> GetUserByUserNameAsync(string username);
@@ -29,7 +28,6 @@ namespace SavageExpenseTracker.Application.Interfaces
         Task<bool> ChangePasswordAsync(Guid id, ChangePasswordDto changePasswordDto);
         
         // Search Methods
-        Task<IEnumerable<UserDto>> SearchUserByEmailAsync(string query);
-        Task<PagedResultDto<UserDto>> SearchUserByEmailPagedAsync(string query, int pageNumber, int pageSize);
+        Task<PagedResultDto<UserDto>> SearchUserByEmailAsync(string query, int pageNumber, int pageSize);
     }
 }

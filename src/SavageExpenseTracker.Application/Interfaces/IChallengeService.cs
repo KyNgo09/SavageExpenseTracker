@@ -8,8 +8,7 @@ namespace SavageExpenseTracker.Application.Interfaces
 {
     public interface IChallengeService
     {
-        Task<IEnumerable<ChallengeDto>> GetAllChallengesAsync();
-        Task<PagedResultDto<ChallengeDto>> GetChallengesPagedAsync(int pageNumber, int pageSize);
+        Task<PagedResultDto<ChallengeDto>> GetAllChallengesAsync(int pageNumber, int pageSize);
         Task<ChallengeDto?> GetChallengeByIdAsync(long id);
         Task<ChallengeDto> CreateChallengeAsync(CreateChallengeDto createChallengeDto);
         Task<bool> JoinChallengeAsync(long challengeId, Guid userId);

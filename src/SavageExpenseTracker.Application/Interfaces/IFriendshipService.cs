@@ -15,9 +15,7 @@ namespace SavageExpenseTracker.Application.Interfaces
         Task<bool> BlockUserAsync(Guid currentUserId, Guid targetUserId);
         Task<bool> UnblockUserAsync(Guid currentUserId, Guid targetUserId);
 
-        Task<IEnumerable<UserProfileDto>> GetFriendsListAsync(Guid currentUserId);
-        Task<PagedResultDto<UserProfileDto>> GetFriendsListPagedAsync(Guid currentUserId, int pageNumber, int pageSize);
-        Task<IEnumerable<FriendshipRequestDto>> GetPendingRequestsAsync(Guid currentUserId);
-        Task<PagedResultDto<FriendshipRequestDto>> GetPendingRequestsPagedAsync(Guid currentUserId, int pageNumber, int pageSize);
+        Task<PagedResultDto<UserProfileDto>> GetFriendsListAsync(Guid currentUserId, int pageNumber, int pageSize);
+        Task<PagedResultDto<FriendshipRequestDto>> GetPendingRequestsAsync(Guid currentUserId, int pageNumber, int pageSize);
     }
 }

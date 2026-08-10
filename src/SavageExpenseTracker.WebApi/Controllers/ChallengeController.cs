@@ -26,7 +26,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
         [HttpGet]
         public async Task<ActionResult<PagedResultDto<ChallengeDto>>> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var pagedChallenges = await _challengeService.GetChallengesPagedAsync(pageNumber, pageSize);
+            var pagedChallenges = await _challengeService.GetAllChallengesAsync(pageNumber, pageSize);
             return Ok(pagedChallenges);
         }
 

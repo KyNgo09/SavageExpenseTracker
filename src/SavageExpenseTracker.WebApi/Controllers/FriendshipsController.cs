@@ -24,7 +24,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
         [HttpGet("friends")]
         public async Task<IActionResult> GetFriends([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var pagedFriends = await _friendshipService.GetFriendsListPagedAsync(User.GetUserId(), pageNumber, pageSize);
+            var pagedFriends = await _friendshipService.GetFriendsListAsync(User.GetUserId(), pageNumber, pageSize);
             return Ok(pagedFriends);
         }
 
@@ -32,7 +32,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
         [HttpGet("requests")]
         public async Task<IActionResult> GetPendingRequests([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var pagedRequests = await _friendshipService.GetPendingRequestsPagedAsync(User.GetUserId(), pageNumber, pageSize);
+            var pagedRequests = await _friendshipService.GetPendingRequestsAsync(User.GetUserId(), pageNumber, pageSize);
             return Ok(pagedRequests);
         }
 

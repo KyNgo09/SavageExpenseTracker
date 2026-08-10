@@ -31,7 +31,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<PagedResultDto<UserDto>>> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var pagedUsers = await _userService.GetAllUsersPagedAsync(pageNumber, pageSize);
+            var pagedUsers = await _userService.GetAllUsersAsync(pageNumber, pageSize);
             return Ok(pagedUsers);
         }
 
@@ -155,7 +155,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
             {
                 return BadRequest(new { Message = "Email can't be empty!"});
             }
-            var pagedUsers = await _userService.SearchUserByEmailPagedAsync(email, pageNumber, pageSize);
+            var pagedUsers = await _userService.SearchUserByEmailAsync(email, pageNumber, pageSize);
             return Ok(pagedUsers);
         }
 

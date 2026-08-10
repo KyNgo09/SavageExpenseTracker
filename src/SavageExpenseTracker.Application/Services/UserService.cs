@@ -21,13 +21,7 @@ namespace SavageExpenseTracker.Application.Services
             _userRepository = userRepository;
         }
         
-        public async Task<IEnumerable<UserDto>> GetAllUserAsync()
-        {
-            var users = await _userRepository.GetAllAsync();
-            return users.Select(u => u.ToDto());
-        }
-
-        public async Task<PagedResultDto<UserDto>> GetAllUsersPagedAsync(int pageNumber, int pageSize)
+        public async Task<PagedResultDto<UserDto>> GetAllUsersAsync(int pageNumber, int pageSize)
         {
             if (pageNumber < 1) pageNumber = 1;
             if (pageSize < 1) pageSize = 10;
@@ -168,14 +162,7 @@ namespace SavageExpenseTracker.Application.Services
             return true;
         }
 
-        public async Task<IEnumerable<UserDto>> SearchUserByEmailAsync(string query)
-        {
-            if (string.IsNullOrWhiteSpace(query)) return Enumerable.Empty<UserDto>();
-            var matchedUsers = await _userRepository.SearchByEmailAsync(query);
-            return matchedUsers.Select(u => u.ToDto());
-        }
-
-        public async Task<PagedResultDto<UserDto>> SearchUserByEmailPagedAsync(string query, int pageNumber, int pageSize)
+        public async Task<PagedResultDto<UserDto>> SearchUserByEmailAsync(string query, int pageNumber, int pageSize)
         {
             if (string.IsNullOrWhiteSpace(query))
             {
