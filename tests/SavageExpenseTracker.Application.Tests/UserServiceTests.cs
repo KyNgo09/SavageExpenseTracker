@@ -180,15 +180,16 @@ namespace SavageExpenseTracker.Application.Tests
         }
 
         [Fact]
-        public async Task GetAllUserAsync_ShouldReturnDtoList()
+        public async Task GetAllUsersAsync_ShouldReturnPagedResultDto()
         {
             var users = new List<User> { new User { Id = Guid.NewGuid(), Email = "a@test.com" } };
-            _userRepositoryMock.Setup(repo => repo.GetAllAsync()).ReturnsAsync(users);
+            _userRepositoryMock.Setup(repo => repo.GetAllAsync(1, 10)).ReturnsAsync((users, 1));
 
-            var result = await _userService.GetAllUserAsync();
+            var result = await _userService.GetAllUsersAsync(1, 10);
 
-            result.Should().HaveCount(1);
-            result.First().Email.Should().Be("a@test.com");
+            result.Items.Should().HaveCount(1);
+            result.TotalCount.Should().Be(1);
+            result.Items.First().Email.Should().Be("a@test.com");
         }
 
         [Fact]
@@ -304,21 +305,20 @@ namespace SavageExpenseTracker.Application.Tests
         }
 
         [Fact]
-        public async Task SearchUserByEmailAsync_ShouldReturnMatchingUsers()
+        public async Task SearchUserByEmailAsync_ShouldReturnMatchingPagedUsers()
         {
             var users = new List<User> 
             { 
                 new User { Email = "test@example.com" },
-                new User { Email = "other@example.com" },
                 new User { Email = "test2@test.com" }
             };
-            _userRepositoryMock.Setup(repo => repo.GetAllAsync()).ReturnsAsync(users);
+            _userRepositoryMock.Setup(repo => repo.SearchByEmailAsync("test", 1, 10)).ReturnsAsync((users, 2));
 
-            var result = (await _userService.SearchUserByEmailAsync("test")).ToList();
+            var result = await _userService.SearchUserByEmailAsync("test", 1, 10);
 
-            result.Should().HaveCount(2);
-            result[0].Email.Should().Be("test@example.com");
-            result[1].Email.Should().Be("test2@test.com");
+            result.Items.Should().HaveCount(2);
+            result.TotalCount.Should().Be(2);
+            result.Items.First().Email.Should().Be("test@example.com");
         }
     }
 }

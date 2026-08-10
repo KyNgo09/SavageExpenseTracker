@@ -26,7 +26,7 @@ namespace SavageExpenseTracker.Application.Tests
         }
 
         [Fact]
-        public async Task GetUserExpensesAsync_ShouldReturnExpenses()
+        public async Task GetUserExpensesAsync_ShouldReturnPagedResultDto()
         {
             // Arrange
             var userId = Guid.NewGuid();
@@ -34,14 +34,15 @@ namespace SavageExpenseTracker.Application.Tests
             { 
                 new Expense { Id = 1, UserId = userId, Amount = 100 } 
             };
-            _expenseRepositoryMock.Setup(repo => repo.GetByUserIdAsync(userId)).ReturnsAsync(expenses);
+            _expenseRepositoryMock.Setup(repo => repo.GetByUserIdAsync(userId, 1, 10)).ReturnsAsync((expenses, 1));
 
             // Act
-            var result = await _expenseService.GetUserExpensesAsync(userId);
+            var result = await _expenseService.GetUserExpensesAsync(userId, 1, 10);
 
             // Assert
-            result.Should().HaveCount(1);
-            result.First().Amount.Should().Be(100);
+            result.Items.Should().HaveCount(1);
+            result.TotalCount.Should().Be(1);
+            result.Items.First().Amount.Should().Be(100);
         }
 
         [Fact]

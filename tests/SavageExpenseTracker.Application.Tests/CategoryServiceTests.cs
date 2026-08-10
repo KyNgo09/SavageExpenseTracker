@@ -24,15 +24,16 @@ namespace SavageExpenseTracker.Application.Tests
         }
 
         [Fact]
-        public async Task GetAllCategoriesAsync_ShouldReturnDtoList()
+        public async Task GetAllCategoriesAsync_ShouldReturnPagedResultDto()
         {
             var categories = new List<Category> { new Category { Id = 1, Name = "Food" } };
-            _categoryRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(categories);
+            _categoryRepoMock.Setup(r => r.GetAllAsync(1, 10)).ReturnsAsync((categories, 1));
 
-            var result = await _service.GetAllCategoriesAsync();
+            var result = await _service.GetAllCategoriesAsync(1, 10);
 
-            result.Should().HaveCount(1);
-            result.First().Name.Should().Be("Food");
+            result.Items.Should().HaveCount(1);
+            result.TotalCount.Should().Be(1);
+            result.Items.First().Name.Should().Be("Food");
         }
 
         [Fact]

@@ -301,7 +301,7 @@ namespace SavageExpenseTracker.Application.Tests
         }
 
         [Fact]
-        public async Task GetFriendsListAsync_ShouldReturnDtoList()
+        public async Task GetFriendsListAsync_ShouldReturnPagedResultDto()
         {
             var currentUserId = Guid.NewGuid();
             var friendId = Guid.NewGuid();
@@ -310,16 +310,17 @@ namespace SavageExpenseTracker.Application.Tests
                 new Friendship { UserId = currentUserId, FriendId = friendId, Friend = new User { Id = friendId, UserName = "friend1" } }
             };
 
-            _friendshipRepositoryMock.Setup(repo => repo.GetFriendsAsync(currentUserId)).ReturnsAsync(friendships);
+            _friendshipRepositoryMock.Setup(repo => repo.GetFriendsAsync(currentUserId, 1, 10)).ReturnsAsync((friendships, 1));
 
-            var result = await _friendshipService.GetFriendsListAsync(currentUserId);
+            var result = await _friendshipService.GetFriendsListAsync(currentUserId, 1, 10);
 
-            result.Should().HaveCount(1);
-            result.First().UserName.Should().Be("friend1");
+            result.Items.Should().HaveCount(1);
+            result.TotalCount.Should().Be(1);
+            result.Items.First().UserName.Should().Be("friend1");
         }
 
         [Fact]
-        public async Task GetPendingRequestsAsync_ShouldReturnDtoList()
+        public async Task GetPendingRequestsAsync_ShouldReturnPagedResultDto()
         {
             var currentUserId = Guid.NewGuid();
             var senderId = Guid.NewGuid();
@@ -328,12 +329,13 @@ namespace SavageExpenseTracker.Application.Tests
                 new Friendship { Id = 1, User = new User { Id = senderId, UserName = "sender1" }, CreatedAt = DateTime.UtcNow }
             };
 
-            _friendshipRepositoryMock.Setup(repo => repo.GetPendingRequestsAsync(currentUserId)).ReturnsAsync(friendships);
+            _friendshipRepositoryMock.Setup(repo => repo.GetPendingRequestsAsync(currentUserId, 1, 10)).ReturnsAsync((friendships, 1));
 
-            var result = await _friendshipService.GetPendingRequestsAsync(currentUserId);
+            var result = await _friendshipService.GetPendingRequestsAsync(currentUserId, 1, 10);
 
-            result.Should().HaveCount(1);
-            result.First().SenderName.Should().Be("sender1");
+            result.Items.Should().HaveCount(1);
+            result.TotalCount.Should().Be(1);
+            result.Items.First().SenderName.Should().Be("sender1");
         }
     }
 }

@@ -18,15 +18,7 @@ namespace SavageExpenseTracker.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<IEnumerable<Expense>> GetByUserIdAsync(Guid userId)
-        {
-            return await _context.Expenses
-                .Where(e => e.UserId == userId)
-                .OrderByDescending(e => e.CreatedAt)
-                .ToListAsync();
-        }
-
-        public async Task<(IEnumerable<Expense> Items, int TotalCount)> GetPagedByUserIdAsync(Guid userId, int pageNumber, int pageSize)
+        public async Task<(IEnumerable<Expense> Items, int TotalCount)> GetByUserIdAsync(Guid userId, int pageNumber, int pageSize)
         {
             var query = _context.Expenses
                 .AsNoTracking()

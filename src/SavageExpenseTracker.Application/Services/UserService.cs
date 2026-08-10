@@ -27,7 +27,7 @@ namespace SavageExpenseTracker.Application.Services
             if (pageSize < 1) pageSize = 10;
             if (pageSize > 100) pageSize = 100;
 
-            var (items, totalCount) = await _userRepository.GetPagedAsync(pageNumber, pageSize);
+            var (items, totalCount) = await _userRepository.GetAllAsync(pageNumber, pageSize);
 
             return new PagedResultDto<UserDto>
             {
@@ -179,7 +179,7 @@ namespace SavageExpenseTracker.Application.Services
             if (pageSize < 1) pageSize = 10;
             if (pageSize > 100) pageSize = 100;
 
-            var (items, totalCount) = await _userRepository.SearchByEmailPagedAsync(query, pageNumber, pageSize);
+            var (items, totalCount) = await _userRepository.SearchByEmailAsync(query, pageNumber, pageSize);
 
             return new PagedResultDto<UserDto>
             {

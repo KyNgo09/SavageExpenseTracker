@@ -131,7 +131,7 @@ namespace SavageExpenseTracker.Application.Services
             if (pageSize < 1) pageSize = 10;
             if (pageSize > 100) pageSize = 100;
 
-            var (items, totalCount) = await _friendshipRepository.GetFriendsPagedAsync(currentUserId, pageNumber, pageSize);
+            var (items, totalCount) = await _friendshipRepository.GetFriendsAsync(currentUserId, pageNumber, pageSize);
 
             var dtos = items.Select(f =>
             {
@@ -159,7 +159,7 @@ namespace SavageExpenseTracker.Application.Services
             if (pageSize < 1) pageSize = 10;
             if (pageSize > 100) pageSize = 100;
 
-            var (items, totalCount) = await _friendshipRepository.GetPendingRequestsPagedAsync(currentUserId, pageNumber, pageSize);
+            var (items, totalCount) = await _friendshipRepository.GetPendingRequestsAsync(currentUserId, pageNumber, pageSize);
 
             var dtos = items.Select(f => new FriendshipRequestDto
             {

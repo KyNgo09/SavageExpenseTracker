@@ -12,9 +12,7 @@ namespace SavageExpenseTracker.Application.Interfaces
         Task AddAsync(Friendship friendship);
         Task UpdateAsync(Friendship friendship);
         Task DeleteAsync(Friendship friendship);
-        Task<IEnumerable<Friendship>> GetFriendsAsync(Guid userId);
-        Task<(IEnumerable<Friendship> Items, int TotalCount)> GetFriendsPagedAsync(Guid userId, int pageNumber, int pageSize);
-        Task<IEnumerable<Friendship>> GetPendingRequestsAsync(Guid userId);
-        Task<(IEnumerable<Friendship> Items, int TotalCount)> GetPendingRequestsPagedAsync(Guid userId, int pageNumber, int pageSize);
+        Task<(IEnumerable<Friendship> Items, int TotalCount)> GetFriendsAsync(Guid userId, int pageNumber, int pageSize);
+        Task<(IEnumerable<Friendship> Items, int TotalCount)> GetPendingRequestsAsync(Guid userId, int pageNumber, int pageSize);
     }
 }

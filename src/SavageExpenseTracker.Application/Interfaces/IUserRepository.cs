@@ -8,8 +8,7 @@ namespace SavageExpenseTracker.Application.Interfaces
     public interface IUserRepository
     {
         // Get Methods
-        Task<IEnumerable<User>> GetAllAsync();
-        Task<(IEnumerable<User> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize);
+        Task<(IEnumerable<User> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize);
         Task<User?> GetByIdAsync(Guid id);
         Task<User?> GetByEmailAsync(string email);
         Task<User?> GetByUserNameAsync(string username);
@@ -23,7 +22,6 @@ namespace SavageExpenseTracker.Application.Interfaces
         Task<bool> EmailExistsAsync(string email);
         Task<bool> UserNameExistsAsync(string username);
 
-        Task<IEnumerable<User>> SearchByEmailAsync(string query);
-        Task<(IEnumerable<User> Items, int TotalCount)> SearchByEmailPagedAsync(string query, int pageNumber, int pageSize);
+        Task<(IEnumerable<User> Items, int TotalCount)> SearchByEmailAsync(string query, int pageNumber, int pageSize);
     }
 }

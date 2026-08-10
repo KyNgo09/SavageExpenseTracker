@@ -6,8 +6,7 @@ namespace SavageExpenseTracker.Application.Interfaces
 {
     public interface ICategoryRepository
     {
-        Task<IEnumerable<Category>> GetAllAsync();
-        Task<(IEnumerable<Category> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize);
+        Task<(IEnumerable<Category> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize);
         Task<Category?> GetByIdAsync(long id);
         Task AddAsync(Category category);
         Task UpdateAsync(Category category);

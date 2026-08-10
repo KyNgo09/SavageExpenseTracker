@@ -44,12 +44,7 @@ namespace SavageExpenseTracker.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<IEnumerable<Friendship>> GetFriendsAsync(Guid userId)
-        {
-            return await _context.Friendships.Include(f => f.User).Include(f => f.Friend).Where(f => f.Status == "accepted" && (f.UserId == userId || f.FriendId == userId)).ToListAsync();
-        }
-
-        public async Task<(IEnumerable<Friendship> Items, int TotalCount)> GetFriendsPagedAsync(Guid userId, int pageNumber, int pageSize)
+        public async Task<(IEnumerable<Friendship> Items, int TotalCount)> GetFriendsAsync(Guid userId, int pageNumber, int pageSize)
         {
             var query = _context.Friendships
                 .AsNoTracking()
@@ -67,12 +62,7 @@ namespace SavageExpenseTracker.Infrastructure.Repositories
             return (items, totalCount);
         }
 
-        public async Task<IEnumerable<Friendship>> GetPendingRequestsAsync(Guid userId)
-        {
-            return await _context.Friendships.Include(f => f.User).Where(f => f.FriendId == userId && f.Status == "pending").ToListAsync();
-        }
-
-        public async Task<(IEnumerable<Friendship> Items, int TotalCount)> GetPendingRequestsPagedAsync(Guid userId, int pageNumber, int pageSize)
+        public async Task<(IEnumerable<Friendship> Items, int TotalCount)> GetPendingRequestsAsync(Guid userId, int pageNumber, int pageSize)
         {
             var query = _context.Friendships
                 .AsNoTracking()

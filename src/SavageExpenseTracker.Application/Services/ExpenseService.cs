@@ -27,7 +27,7 @@ namespace SavageExpenseTracker.Application.Services
             if (pageSize < 1) pageSize = 10;
             if (pageSize > 100) pageSize = 100;
 
-            var (items, totalCount) = await _expenseRepository.GetPagedByUserIdAsync(userId, pageNumber, pageSize);
+            var (items, totalCount) = await _expenseRepository.GetByUserIdAsync(userId, pageNumber, pageSize);
 
             return new PagedResultDto<ExpenseDto>
             {

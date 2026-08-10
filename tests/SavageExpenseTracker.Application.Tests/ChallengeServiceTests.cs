@@ -28,11 +28,12 @@ namespace SavageExpenseTracker.Application.Tests
         }
 
         [Fact]
-        public async Task GetAllChallengesAsync_ShouldReturnList()
+        public async Task GetAllChallengesAsync_ShouldReturnPagedResultDto()
         {
-            _challengeRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Challenge> { new Challenge { Id = 1 } });
-            var result = await _service.GetAllChallengesAsync();
-            result.Should().HaveCount(1);
+            _challengeRepoMock.Setup(r => r.GetAllAsync(1, 10)).ReturnsAsync((new List<Challenge> { new Challenge { Id = 1 } }, 1));
+            var result = await _service.GetAllChallengesAsync(1, 10);
+            result.Items.Should().HaveCount(1);
+            result.TotalCount.Should().Be(1);
         }
 
         [Fact]
@@ -177,17 +178,18 @@ namespace SavageExpenseTracker.Application.Tests
             _challengeRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(challenge);
 
             // Setup expenses for leaderboard logic
-            var ex1 = new Expense { Amount = 100, CreatedAt = DateTime.UtcNow.AddDays(-3) };
-            var ex2 = new Expense { Amount = 200, CreatedAt = DateTime.UtcNow.AddDays(-3) };
+            var ex1 = new Expense { UserId = userId1, Amount = 100, CreatedAt = DateTime.UtcNow.AddDays(-3) };
+            var ex2 = new Expense { UserId = userId2, Amount = 200, CreatedAt = DateTime.UtcNow.AddDays(-3) };
 
-            _expenseRepoMock.Setup(r => r.GetByUserIdAsync(userId1)).ReturnsAsync(new List<Expense> { ex1 });
-            _expenseRepoMock.Setup(r => r.GetByUserIdAsync(userId2)).ReturnsAsync(new List<Expense> { ex2 });
+            _expenseRepoMock.Setup(r => r.GetByUserAndDateRangeAsync(It.IsAny<IEnumerable<Guid>>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .ReturnsAsync(new List<Expense> { ex1, ex2 });
 
             await _service.ProcessExpiredChallengesAsync();
 
             _challengeRepoMock.Verify(r => r.UpdateAsync(It.Is<Challenge>(c => c.WinnerId == userId1 && c.LoserId == userId2)), Times.Once);
             _notificationMock.Verify(n => n.NotifyChallengeEndedAsync(1, userId1, userId2), Times.Once);
         }
+
         [Fact]
         public async Task ProcessExpiredChallengesAsync_ShouldSkip_WhenNoMembers()
         {
@@ -216,7 +218,8 @@ namespace SavageExpenseTracker.Application.Tests
             };
 
             _challengeRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(challenge);
-            _expenseRepoMock.Setup(r => r.GetByUserIdAsync(userId)).ReturnsAsync(new List<Expense>());
+            _expenseRepoMock.Setup(r => r.GetByUserAndDateRangeAsync(It.IsAny<IEnumerable<Guid>>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .ReturnsAsync(new List<Expense>());
 
             var result = await _service.GetLeaderboardAsync(1);
 
@@ -246,24 +249,12 @@ namespace SavageExpenseTracker.Application.Tests
 
             _challengeRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(challenge);
 
-            // User 1: 1 valid expense (100)
-            _expenseRepoMock.Setup(r => r.GetByUserIdAsync(userId1)).ReturnsAsync(new List<Expense> 
-            { 
-                new Expense { Amount = 100, CreatedAt = dateStart.AddDays(1) } 
-            });
+            var ex1 = new Expense { UserId = userId1, Amount = 100, CreatedAt = dateStart.AddDays(1) };
+            var ex2 = new Expense { UserId = userId2, Amount = 500, CreatedAt = dateStart.AddDays(1) };
+            var ex3 = new Expense { UserId = userId3, Amount = 200, CreatedAt = dateStart.AddDays(1) };
 
-            // User 2: 1 valid expense (500), 1 invalid expense outside timeframe (1000)
-            _expenseRepoMock.Setup(r => r.GetByUserIdAsync(userId2)).ReturnsAsync(new List<Expense> 
-            { 
-                new Expense { Amount = 500, CreatedAt = dateStart.AddDays(1) },
-                new Expense { Amount = 1000, CreatedAt = dateStart.AddDays(-1) } // Before start
-            });
-
-            // User 3: 1 valid expense (200)
-            _expenseRepoMock.Setup(r => r.GetByUserIdAsync(userId3)).ReturnsAsync(new List<Expense> 
-            { 
-                new Expense { Amount = 200, CreatedAt = dateStart.AddDays(1) }
-            });
+            _expenseRepoMock.Setup(r => r.GetByUserAndDateRangeAsync(It.IsAny<IEnumerable<Guid>>(), dateStart, dateEnd))
+                .ReturnsAsync(new List<Expense> { ex1, ex2, ex3 });
 
             var result = (await _service.GetLeaderboardAsync(1)).ToList();
 
@@ -276,7 +267,7 @@ namespace SavageExpenseTracker.Application.Tests
             result[1].UserId.Should().Be(userId3); // 200
             result[1].Title.Should().Be(string.Empty);
 
-            result[2].UserId.Should().Be(userId2); // 500 (1000 is ignored)
+            result[2].UserId.Should().Be(userId2); // 500
             result[2].Title.Should().Be("Báo Thủ");
         }
     }

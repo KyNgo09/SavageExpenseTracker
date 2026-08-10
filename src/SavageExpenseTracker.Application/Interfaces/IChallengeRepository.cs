@@ -6,8 +6,7 @@ namespace SavageExpenseTracker.Application.Interfaces
 {
     public interface IChallengeRepository
     {
-        Task<IEnumerable<Challenge>> GetAllAsync();
-        Task<(IEnumerable<Challenge> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize);
+        Task<(IEnumerable<Challenge> Items, int TotalCount)> GetAllAsync(int pageNumber, int pageSize);
         Task<Challenge?> GetByIdAsync(long id);
         Task AddAsync(Challenge challenge);
         Task UpdateAsync(Challenge challenge);
