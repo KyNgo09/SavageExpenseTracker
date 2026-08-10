@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using SavageExpenseTracker.Application.Dtos;
 using SavageExpenseTracker.Application.Dtos.Expense;
 
 namespace SavageExpenseTracker.Application.Interfaces
