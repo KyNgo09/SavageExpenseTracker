@@ -26,9 +26,7 @@ namespace SavageExpenseTracker.Application.Services
 
         public async Task<PagedResultDto<ExpenseDto>> GetUserExpensesAsync(Guid userId, int pageNumber, int pageSize)
         {
-            if (pageNumber < 1) pageNumber = 1;
-            if (pageSize < 1) pageSize = 10;
-            if (pageSize > 100) pageSize = 100;
+            (pageNumber, pageSize) = PaginationHelper.Normalize(pageNumber, pageSize);
 
             var (items, totalCount) = await _expenseRepository.GetByUserIdAsync(userId, pageNumber, pageSize);
 
@@ -83,14 +81,12 @@ namespace SavageExpenseTracker.Application.Services
                 throw new InvalidOperationException("You do not have permission to update this expense.");
             }
 
-            // Calculate TimeWork based on the applied hourly rate saved in the past (do not use the current user.HourlyRate)
             var timeWork = expense.AppliedHourlyRate > 0 ? updateExpenseDto.Amount / expense.AppliedHourlyRate : 0;
             expense.Description = updateExpenseDto.Description;
             expense.Amount = updateExpenseDto.Amount;
             expense.TimeWork = timeWork;
             expense.CategoryId = updateExpenseDto.CategoryId;
             
-            // Do not assign ImageUrl and SavageComment from dto because client-side modifications via this API are not allowed.
             await _expenseRepository.UpdateAsync(expense);
             return true;
         }
@@ -110,19 +106,8 @@ namespace SavageExpenseTracker.Application.Services
 
         public async Task<string> UploadReceiptAsync(System.IO.Stream stream, string fileName, string contentType, long fileLength)
         {
-            if (stream == null || fileLength == 0)
-                throw new InvalidOperationException("Please select an image file!");
-
-            if (fileLength > 10 * 1024 * 1024)
-                throw new InvalidOperationException("File size must not exceed 10 MB!");
-
             var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif", ".heic" };
-            var extension = System.IO.Path.GetExtension(fileName)?.ToLowerInvariant();
-
-            if (string.IsNullOrEmpty(extension) || !allowedExtensions.Contains(extension) || !contentType.StartsWith("image/"))
-            {
-                throw new InvalidOperationException("Invalid image file format! Only JPG, JPEG, PNG, WEBP, GIF, and HEIC images are allowed.");
-            }
+            FileUploadHelper.ValidateImageFile(stream, fileName, contentType, fileLength, 10 * 1024 * 1024, allowedExtensions);
 
             return await _photoService.UploadPhotoAsync(stream, fileName, PhotoFolders.ExpensePhotos);
         }

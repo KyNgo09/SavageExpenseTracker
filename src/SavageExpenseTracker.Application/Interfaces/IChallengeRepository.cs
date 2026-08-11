@@ -11,7 +11,7 @@ namespace SavageExpenseTracker.Application.Interfaces
         Task AddAsync(Challenge challenge);
         Task UpdateAsync(Challenge challenge);
         Task AddMemberAsync(ChallengeMember member);
-        Task RemovemMemberAsync(ChallengeMember member);
+        Task RemoveMemberAsync(ChallengeMember member);
         Task<IEnumerable<Challenge>> GetUnprocessedFinishedChallengesAsync(); // CronJob  
     }
 }

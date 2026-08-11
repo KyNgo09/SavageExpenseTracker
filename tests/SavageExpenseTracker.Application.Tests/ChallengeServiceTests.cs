@@ -155,7 +155,7 @@ namespace SavageExpenseTracker.Application.Tests
             var result = await _service.LeaveChallengeAsync(1, userId);
             
             result.Should().BeTrue();
-            _challengeRepoMock.Verify(r => r.RemovemMemberAsync(member), Times.Once);
+            _challengeRepoMock.Verify(r => r.RemoveMemberAsync(member), Times.Once);
             _notificationMock.Verify(n => n.NotifyUserLeftAsync(1, userId), Times.Once);
         }
 

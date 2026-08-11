@@ -10,9 +10,9 @@ namespace SavageExpenseTracker.WebApi.Hubs
             await Groups.AddToGroupAsync(Context.ConnectionId, $"Challenge_{challengeId}");
         }
 
-        public async Task LeaveRoom(string ChallengeId)
+        public async Task LeaveRoom(string challengeId)
         {
-            await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"Challenge_{ChallengeId}");
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"Challenge_{challengeId}");
         }
     }
 }

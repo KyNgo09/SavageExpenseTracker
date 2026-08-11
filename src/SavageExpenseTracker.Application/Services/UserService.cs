@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using SavageExpenseTracker.Application.Constants;
 using SavageExpenseTracker.Application.Dtos;
@@ -15,21 +14,22 @@ namespace SavageExpenseTracker.Application.Services
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
-        private readonly ITokenService _tokenService;
         private readonly IPhotoService _photoService;
+        private readonly IPasswordHasher _passwordHasher;
 
-        public UserService(IUserRepository userRepository, ITokenService tokenService, IPhotoService photoService)
+        public UserService(
+            IUserRepository userRepository, 
+            IPhotoService photoService,
+            IPasswordHasher passwordHasher)
         {
             _userRepository = userRepository;
-            _tokenService = tokenService;
             _photoService = photoService;
+            _passwordHasher = passwordHasher;
         }
         
         public async Task<PagedResultDto<UserDto>> GetAllUsersAsync(int pageNumber, int pageSize)
         {
-            if (pageNumber < 1) pageNumber = 1;
-            if (pageSize < 1) pageSize = 10;
-            if (pageSize > 100) pageSize = 100;
+            (pageNumber, pageSize) = PaginationHelper.Normalize(pageNumber, pageSize);
 
             var (items, totalCount) = await _userRepository.GetAllAsync(pageNumber, pageSize);
 
@@ -82,7 +82,7 @@ namespace SavageExpenseTracker.Application.Services
                 throw new InvalidOperationException("Username already exists!");
             }
 
-            var passwordHash = PasswordHasher.HashPassword(createUserDto.Password);
+            var passwordHash = _passwordHasher.HashPassword(createUserDto.Password);
 
             var user = new User
             {
@@ -124,113 +124,6 @@ namespace SavageExpenseTracker.Application.Services
             return true;
         }
 
-        public async Task<UserDto?> AuthenticateAsync(LoginDto loginDto)
-        {
-            var user = await _userRepository.GetByEmailAsync(loginDto.Email);
-            if (user == null)
-            {
-                return null;
-            }
-
-            if (!PasswordHasher.VerifyPassword(loginDto.Password, user.PasswordHash))
-            {
-                return null;
-            }
-            
-            return user.ToDto();
-        }
-
-        public async Task<TokenResponseDto?> LoginAsync(LoginDto loginDto)
-        {
-            var user = await _userRepository.GetByEmailAsync(loginDto.Email);
-            if (user == null || !PasswordHasher.VerifyPassword(loginDto.Password, user.PasswordHash))
-            {
-                return null;
-            }
-
-            var accessToken = _tokenService.GenerateAccessToken(user);
-            var refreshToken = _tokenService.GenerateRefreshToken();
-
-            user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiryDate = DateTime.UtcNow.AddDays(7);
-            await _userRepository.UpdateAsync(user);
-
-            return new TokenResponseDto
-            {
-                AccessToken = accessToken,
-                RefreshToken = refreshToken
-            };
-        }
-
-        public async Task<TokenResponseDto?> RefreshTokenAsync(TokenApiModel tokenApiModel)
-        {
-            if (tokenApiModel == null || string.IsNullOrEmpty(tokenApiModel.AccessToken) || string.IsNullOrEmpty(tokenApiModel.RefreshToken))
-            {
-                return null;
-            }
-
-            ClaimsPrincipal principal;
-            try
-            {
-                principal = _tokenService.GetPrincipalFromExpiredToken(tokenApiModel.AccessToken);
-            }
-            catch
-            {
-                return null;
-            }
-
-            var userIdString = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!Guid.TryParse(userIdString, out Guid userId))
-            {
-                return null;
-            }
-
-            var user = await _userRepository.GetByIdAsync(userId);
-            if (user == null || user.RefreshToken != tokenApiModel.RefreshToken || user.RefreshTokenExpiryDate <= DateTime.UtcNow)
-            {
-                return null;
-            }
-
-            var newAccessToken = _tokenService.GenerateAccessToken(user);
-            var newRefreshToken = _tokenService.GenerateRefreshToken();
-
-            user.RefreshToken = newRefreshToken;
-            user.RefreshTokenExpiryDate = DateTime.UtcNow.AddDays(7);
-            await _userRepository.UpdateAsync(user);
-
-            return new TokenResponseDto
-            {
-                AccessToken = newAccessToken,
-                RefreshToken = newRefreshToken
-            };
-        }
-
-        public async Task<bool> ChangePasswordAsync(Guid id, ChangePasswordDto changePasswordDto)
-        {
-            if (changePasswordDto.NewPassword != changePasswordDto.ConfirmNewPassword)
-            {
-                throw new InvalidOperationException("New password and confirm new password do not match!");
-            }
-
-            var user = await _userRepository.GetByIdAsync(id);
-            if (user == null)
-            {
-                throw new InvalidOperationException("User not found!");
-            }
-
-            if (!PasswordHasher.VerifyPassword(changePasswordDto.OldPassword, user.PasswordHash))
-            {
-                throw new InvalidOperationException("Incorrect old password!");
-            }
-
-            user.PasswordHash = PasswordHasher.HashPassword(changePasswordDto.NewPassword);
-            user.RefreshToken = null;
-            user.RefreshTokenExpiryDate = null;
-            
-            await _userRepository.UpdateAsync(user);
-            return true;
-        }
-
         public async Task<UserDto?> UpdateAvatarAsync(Guid userId, string avatarUrl)
         {
             var user = await _userRepository.GetByIdAsync(userId);
@@ -244,19 +137,8 @@ namespace SavageExpenseTracker.Application.Services
 
         public async Task<UserDto?> UploadAvatarAsync(Guid userId, System.IO.Stream stream, string fileName, string contentType, long fileLength)
         {
-            if (stream == null || fileLength == 0)
-                throw new InvalidOperationException("Please select an image file for avatar!");
-
-            if (fileLength > 5 * 1024 * 1024)
-                throw new InvalidOperationException("Avatar file size must not exceed 5 MB!");
-
             var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
-            var extension = System.IO.Path.GetExtension(fileName)?.ToLowerInvariant();
-
-            if (string.IsNullOrEmpty(extension) || !allowedExtensions.Contains(extension) || !contentType.StartsWith("image/"))
-            {
-                throw new InvalidOperationException("Invalid image file format! Only JPG, JPEG, PNG, and WEBP images are allowed.");
-            }
+            FileUploadHelper.ValidateImageFile(stream, fileName, contentType, fileLength, 5 * 1024 * 1024, allowedExtensions);
 
             var avatarUrl = await _photoService.UploadPhotoAsync(stream, fileName, PhotoFolders.UserAvatars);
             return await UpdateAvatarAsync(userId, avatarUrl);
@@ -275,9 +157,7 @@ namespace SavageExpenseTracker.Application.Services
                 };
             }
 
-            if (pageNumber < 1) pageNumber = 1;
-            if (pageSize < 1) pageSize = 10;
-            if (pageSize > 100) pageSize = 100;
+            (pageNumber, pageSize) = PaginationHelper.Normalize(pageNumber, pageSize);
 
             var (items, totalCount) = await _userRepository.SearchByEmailAsync(query, pageNumber, pageSize);
 

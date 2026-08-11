@@ -24,12 +24,6 @@ namespace SavageExpenseTracker.Application.Interfaces
         // Exist Methods
         Task<bool> EmailExistsAsync(string email);
         Task<bool> UserNameExistsAsync(string username);
-
-        // Authentication Methods
-        Task<UserDto?> AuthenticateAsync(LoginDto loginDto);
-        Task<TokenResponseDto?> LoginAsync(LoginDto loginDto);
-        Task<TokenResponseDto?> RefreshTokenAsync(TokenApiModel tokenApiModel);
-        Task<bool> ChangePasswordAsync(Guid id, ChangePasswordDto changePasswordDto);
         
         // Search Methods
         Task<PagedResultDto<UserDto>> SearchUserByEmailAsync(string query, int pageNumber, int pageSize);

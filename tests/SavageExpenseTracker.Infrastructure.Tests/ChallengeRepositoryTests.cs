@@ -105,7 +105,7 @@ namespace SavageExpenseTracker.Infrastructure.Tests
             await _context.ChallengeMembers.AddAsync(member);
             await _context.SaveChangesAsync();
 
-            await _repository.RemovemMemberAsync(member);
+            await _repository.RemoveMemberAsync(member);
 
             var saved = await _context.ChallengeMembers.FirstOrDefaultAsync();
             saved.Should().BeNull();

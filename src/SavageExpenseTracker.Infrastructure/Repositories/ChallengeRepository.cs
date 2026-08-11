@@ -53,7 +53,7 @@ namespace SavageExpenseTracker.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task RemovemMemberAsync(ChallengeMember member)
+        public async Task RemoveMemberAsync(ChallengeMember member)
         {
             _context.ChallengeMembers.Remove(member);
             await _context.SaveChangesAsync();

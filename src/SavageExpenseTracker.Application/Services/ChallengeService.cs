@@ -4,8 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using SavageExpenseTracker.Application.Dtos;
 using SavageExpenseTracker.Application.Dtos.Challenge;
-using SavageExpenseTracker.Application.Interfaces;
 using SavageExpenseTracker.Application.Helpers;
+using SavageExpenseTracker.Application.Interfaces;
 using SavageExpenseTracker.Domain.Entities;
 
 namespace SavageExpenseTracker.Application.Services
@@ -28,9 +28,7 @@ namespace SavageExpenseTracker.Application.Services
         
         public async Task<PagedResultDto<ChallengeDto>> GetAllChallengesAsync(int pageNumber, int pageSize)
         {
-            if (pageNumber < 1) pageNumber = 1;
-            if (pageSize < 1) pageSize = 10;
-            if (pageSize > 100) pageSize = 100;
+            (pageNumber, pageSize) = PaginationHelper.Normalize(pageNumber, pageSize);
 
             var (items, totalCount) = await _challengeRepository.GetAllAsync(pageNumber, pageSize);
 
@@ -49,13 +47,13 @@ namespace SavageExpenseTracker.Application.Services
             return challenge?.ToDto();
         }
 
-        public async Task<ChallengeDto> CreateChallengeAsync(CreateChallengeDto createCategoryDto)
+        public async Task<ChallengeDto> CreateChallengeAsync(CreateChallengeDto createChallengeDto)
         {
             var challenge = new Challenge
             {
-                Name = createCategoryDto.Name,
-                DateStart = createCategoryDto.DateStart.ToUniversalTime(),
-                DateEnd = createCategoryDto.DateEnd.ToUniversalTime(),
+                Name = createChallengeDto.Name,
+                DateStart = createChallengeDto.DateStart.ToUniversalTime(),
+                DateEnd = createChallengeDto.DateEnd.ToUniversalTime(),
                 CreatedAt = DateTime.UtcNow
             };
             await _challengeRepository.AddAsync(challenge);
@@ -67,10 +65,10 @@ namespace SavageExpenseTracker.Application.Services
             var challenge = await _challengeRepository.GetByIdAsync(challengeId);
             if (challenge == null) return false;
 
-            if(DateTime.UtcNow > challenge.DateEnd)
+            if (DateTime.UtcNow > challenge.DateEnd)
                 throw new InvalidOperationException("Challenge has ended!");
 
-            if(challenge.ChallengeMembers.Any(m => m.UserId == userId))    
+            if (challenge.ChallengeMembers.Any(m => m.UserId == userId))    
                 throw new InvalidOperationException("User has already joined this challenge!");
 
             var member = new ChallengeMember
@@ -88,15 +86,15 @@ namespace SavageExpenseTracker.Application.Services
         public async Task<bool> LeaveChallengeAsync(long challengeId, Guid userId)
         {
             var challenge = await _challengeRepository.GetByIdAsync(challengeId);
-            if(challenge == null) return false;
+            if (challenge == null) return false;
 
             var member = challenge.ChallengeMembers.FirstOrDefault(m => m.UserId == userId);
-            if(member == null) return false;
+            if (member == null) return false;
 
-            if(DateTime.UtcNow > challenge.DateStart)
+            if (DateTime.UtcNow > challenge.DateStart)
                 throw new InvalidOperationException("Challenge has already started!");
 
-            await _challengeRepository.RemovemMemberAsync(member);
+            await _challengeRepository.RemoveMemberAsync(member);
             await _notificationService.NotifyUserLeftAsync(challengeId, userId);
             return true;
         }
@@ -130,7 +128,6 @@ namespace SavageExpenseTracker.Application.Services
                 });
             }
 
-            // Titles are awarded based on relative comparisons rather than specific numbers.
             if (leaderboard.Count > 0)
             {
                 var maxAmount = leaderboard.Max(x => x.TotalAmount);
@@ -138,22 +135,21 @@ namespace SavageExpenseTracker.Application.Services
 
                 foreach (var item in leaderboard)
                 {
-                    if (maxAmount > minAmount) // Must have a difference to be assigned
+                    if (maxAmount > minAmount)
                     {
                         if (item.TotalAmount == maxAmount) 
-                            item.Title = "Báo Thủ"; // Most money spent
+                            item.Title = "Báo Thủ";
                         else if (item.TotalAmount == minAmount) 
-                            item.Title = "Thánh Sinh Tồn"; // Least money spent
+                            item.Title = "Thánh Sinh Tồn";
                     }
                     else if (leaderboard.Count == 1)
                     {
-                        // If only one person in the room, automatically becomes the survivor
                         item.Title = "Thánh Sinh Tồn";
                     }
                 }
             }
 
-            return leaderboard.OrderBy(x => x.TotalAmount); // Sort by amount (who spends less is top 1)
+            return leaderboard.OrderBy(x => x.TotalAmount);
         }
 
         public async Task ProcessExpiredChallengesAsync()

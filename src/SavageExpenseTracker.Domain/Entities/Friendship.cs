@@ -1,4 +1,5 @@
 using System;
+using SavageExpenseTracker.Domain.Constants;
 
 namespace SavageExpenseTracker.Domain.Entities
 {
@@ -7,7 +8,7 @@ namespace SavageExpenseTracker.Domain.Entities
         public long Id { get; set; }
         public Guid UserId { get; set; }  // The person performing the action (sending an invitation, or blocking)
         public Guid FriendId { get; set; } // The person receiving the action
-        public string Status { get; set; } = "pending";
+        public string Status { get; set; } = FriendshipStatus.Pending;
         public DateTime CreatedAt { get; set; }
 
         // Navigation properties

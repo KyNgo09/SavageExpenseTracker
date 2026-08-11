@@ -9,6 +9,7 @@ using SavageExpenseTracker.Application.Constants;
 using SavageExpenseTracker.Application.Dtos;
 using SavageExpenseTracker.Application.Dtos.User;
 using SavageExpenseTracker.Application.Interfaces;
+using SavageExpenseTracker.Domain.Constants;
 using SavageExpenseTracker.WebApi.Extensions;
 
 namespace SavageExpenseTracker.WebApi.Controllers
@@ -18,15 +19,17 @@ namespace SavageExpenseTracker.WebApi.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IUserService _userService;
+        private readonly IAuthService _authService;
 
-        public UsersController(IUserService userService)
+        public UsersController(IUserService userService, IAuthService authService)
         {
             _userService = userService;
+            _authService = authService;
         }
 
         // GET: api/users?pageNumber=1&pageSize=10
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = UserRoles.Admin)]
         public async Task<ActionResult<PagedResultDto<UserDto>>> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
             var pagedUsers = await _userService.GetAllUsersAsync(pageNumber, pageSize);
@@ -58,7 +61,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
         [HttpPost("login")]
         public async Task<ActionResult<TokenResponseDto>> Login(LoginDto loginDto)
         {
-            var tokenResponse = await _userService.LoginAsync(loginDto);
+            var tokenResponse = await _authService.LoginAsync(loginDto);
             if (tokenResponse == null)
             {
                 return Unauthorized(new { Message = "Invalid Email or Password" });
@@ -73,7 +76,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
         {
             if (tokenApiModel is null) return BadRequest("Invalid client request");
 
-            var tokenResponse = await _userService.RefreshTokenAsync(tokenApiModel);
+            var tokenResponse = await _authService.RefreshTokenAsync(tokenApiModel);
             if (tokenResponse == null)
             {
                 return BadRequest(new { Message = "Invalid client request or Refresh Token has expired" });
@@ -92,7 +95,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
                 return Forbid();
             }
 
-            var result = await _userService.ChangePasswordAsync(id, changePasswordDto);
+            var result = await _authService.ChangePasswordAsync(id, changePasswordDto);
             if (!result)
             {
                 return NotFound(new { Message = $"Can't change password for user with ID: {id}" });
@@ -131,7 +134,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
         [Authorize]
         public async Task<IActionResult> Update(Guid id, UpdateUserDto updateUserDto)
         {
-            if (id != User.GetUserId() && !User.IsInRole("Admin"))
+            if (id != User.GetUserId() && !User.IsInRole(UserRoles.Admin))
             {
                 return Forbid();
             }
@@ -146,7 +149,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
 
         // DELETE: api/users/{id}
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = UserRoles.Admin)]
         public async Task<IActionResult> Delete(Guid id)
         {
             var result = await _userService.DeleteUserAsync(id);

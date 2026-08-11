@@ -4,7 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using SavageExpenseTracker.Application.Dtos;
 using SavageExpenseTracker.Application.Dtos.Friendship;
+using SavageExpenseTracker.Application.Helpers;
 using SavageExpenseTracker.Application.Interfaces;
+using SavageExpenseTracker.Domain.Constants;
 using SavageExpenseTracker.Domain.Entities;
 
 namespace SavageExpenseTracker.Application.Services
@@ -28,11 +30,11 @@ namespace SavageExpenseTracker.Application.Services
             {
                 switch (existingFriendship.Status)
                 {
-                    case "pending":
+                    case FriendshipStatus.Pending:
                         throw new InvalidOperationException("Friend request is already pending.");
-                    case "accepted":
+                    case FriendshipStatus.Accepted:
                         throw new InvalidOperationException("Friendship already exists.");
-                    case "blocked":
+                    case FriendshipStatus.Blocked:
                         throw new InvalidOperationException("You have been blocked by this user.");
                     default:
                         throw new InvalidOperationException("Invalid friendship status.");
@@ -43,7 +45,7 @@ namespace SavageExpenseTracker.Application.Services
             {
                 UserId = currentUserId,
                 FriendId = targetUserId,
-                Status = "pending",
+                Status = FriendshipStatus.Pending,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -56,10 +58,10 @@ namespace SavageExpenseTracker.Application.Services
             var friendship = await _friendshipRepository.GetByIdAsync(friendshipId);
             if (friendship == null) return false;
 
-            if(friendship.FriendId != currentUserId || friendship.Status != "pending")
+            if (friendship.FriendId != currentUserId || friendship.Status != FriendshipStatus.Pending)
                 throw new InvalidOperationException("You do not have permission to accept this request.");
             
-            friendship.Status = "accepted";
+            friendship.Status = FriendshipStatus.Accepted;
             await _friendshipRepository.UpdateAsync(friendship);
             return true;
         }
@@ -69,7 +71,7 @@ namespace SavageExpenseTracker.Application.Services
             var friendship = await _friendshipRepository.GetByIdAsync(friendshipId);
             if (friendship == null) return false;
 
-            if((friendship.FriendId == currentUserId || friendship.UserId == currentUserId) && friendship.Status == "pending")
+            if ((friendship.FriendId == currentUserId || friendship.UserId == currentUserId) && friendship.Status == FriendshipStatus.Pending)
             {
                 await _friendshipRepository.DeleteAsync(friendship);
                 return true;
@@ -81,7 +83,7 @@ namespace SavageExpenseTracker.Application.Services
         public async Task<bool> UnfriendAsync(Guid currentUserId, Guid friendId)
         {
             var friendship = await _friendshipRepository.GetFriendshipBetweenAsync(currentUserId, friendId);
-            if (friendship == null || friendship.Status != "accepted") return false;
+            if (friendship == null || friendship.Status != FriendshipStatus.Accepted) return false;
 
             await _friendshipRepository.DeleteAsync(friendship);
             return true;
@@ -98,7 +100,7 @@ namespace SavageExpenseTracker.Application.Services
             {
                 existing.UserId = currentUserId;
                 existing.FriendId = targetUserId;
-                existing.Status = "blocked";
+                existing.Status = FriendshipStatus.Blocked;
                 await _friendshipRepository.UpdateAsync(existing);
             }
             else
@@ -107,7 +109,7 @@ namespace SavageExpenseTracker.Application.Services
                 {
                     UserId = currentUserId,
                     FriendId = targetUserId,
-                    Status = "blocked",
+                    Status = FriendshipStatus.Blocked,
                     CreatedAt = DateTime.UtcNow
                 };
                 await _friendshipRepository.AddAsync(friendship);
@@ -118,7 +120,7 @@ namespace SavageExpenseTracker.Application.Services
         public async Task<bool> UnblockUserAsync(Guid currentUserId, Guid targetUserId)
         {
             var friendship = await _friendshipRepository.GetFriendshipBetweenAsync(currentUserId, targetUserId);
-            if (friendship == null || friendship.Status != "blocked" || friendship.UserId != currentUserId)
+            if (friendship == null || friendship.Status != FriendshipStatus.Blocked || friendship.UserId != currentUserId)
                 return false;
 
             await _friendshipRepository.DeleteAsync(friendship);
@@ -127,9 +129,7 @@ namespace SavageExpenseTracker.Application.Services
 
         public async Task<PagedResultDto<UserProfileDto>> GetFriendsListAsync(Guid currentUserId, int pageNumber, int pageSize)
         {
-            if (pageNumber < 1) pageNumber = 1;
-            if (pageSize < 1) pageSize = 10;
-            if (pageSize > 100) pageSize = 100;
+            (pageNumber, pageSize) = PaginationHelper.Normalize(pageNumber, pageSize);
 
             var (items, totalCount) = await _friendshipRepository.GetFriendsAsync(currentUserId, pageNumber, pageSize);
 
@@ -155,9 +155,7 @@ namespace SavageExpenseTracker.Application.Services
 
         public async Task<PagedResultDto<FriendshipRequestDto>> GetPendingRequestsAsync(Guid currentUserId, int pageNumber, int pageSize)
         {
-            if (pageNumber < 1) pageNumber = 1;
-            if (pageSize < 1) pageSize = 10;
-            if (pageSize > 100) pageSize = 100;
+            (pageNumber, pageSize) = PaginationHelper.Normalize(pageNumber, pageSize);
 
             var (items, totalCount) = await _friendshipRepository.GetPendingRequestsAsync(currentUserId, pageNumber, pageSize);
 

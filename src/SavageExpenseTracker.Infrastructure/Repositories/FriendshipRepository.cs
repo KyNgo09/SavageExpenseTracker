@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SavageExpenseTracker.Application.Interfaces;
+using SavageExpenseTracker.Domain.Constants;
 using SavageExpenseTracker.Domain.Entities;
 using SavageExpenseTracker.Infrastructure.Data;
 
@@ -50,7 +51,7 @@ namespace SavageExpenseTracker.Infrastructure.Repositories
                 .AsNoTracking()
                 .Include(f => f.User)
                 .Include(f => f.Friend)
-                .Where(f => f.Status == "accepted" && (f.UserId == userId || f.FriendId == userId));
+                .Where(f => f.Status == FriendshipStatus.Accepted && (f.UserId == userId || f.FriendId == userId));
 
             var totalCount = await query.CountAsync();
             var items = await query
@@ -67,7 +68,7 @@ namespace SavageExpenseTracker.Infrastructure.Repositories
             var query = _context.Friendships
                 .AsNoTracking()
                 .Include(f => f.User)
-                .Where(f => f.FriendId == userId && f.Status == "pending");
+                .Where(f => f.FriendId == userId && f.Status == FriendshipStatus.Pending);
 
             var totalCount = await query.CountAsync();
             var items = await query

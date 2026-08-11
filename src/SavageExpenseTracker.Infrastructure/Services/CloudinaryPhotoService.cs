@@ -3,8 +3,9 @@ using System.IO;
 using System.Threading.Tasks;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using SavageExpenseTracker.Application.Interfaces;
+using SavageExpenseTracker.Infrastructure.Options;
 
 namespace SavageExpenseTracker.Infrastructure.Services
 {
@@ -12,12 +13,14 @@ namespace SavageExpenseTracker.Infrastructure.Services
     {
         private readonly Cloudinary _cloudinary;
 
-        public CloudinaryPhotoService(IConfiguration config)
+        public CloudinaryPhotoService(IOptions<CloudinaryOptions> options)
         {
+            var config = options?.Value ?? throw new ArgumentNullException(nameof(options));
+
             var acc = new Account(
-                config["Cloudinary:CloudName"],
-                config["Cloudinary:ApiKey"],
-                config["Cloudinary:ApiSecret"]
+                config.CloudName,
+                config.ApiKey,
+                config.ApiSecret
             );
 
             _cloudinary = new Cloudinary(acc);

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using SavageExpenseTracker.Domain.Constants;
 
 namespace SavageExpenseTracker.Domain.Entities
 {
@@ -21,9 +22,9 @@ namespace SavageExpenseTracker.Domain.Entities
         public string GetStatus()
         {
             var now = DateTime.UtcNow;
-            if (now < DateStart) return "Upcoming";
-            if (now > DateEnd) return "Finished";
-            return "Active";
+            if (now < DateStart) return ChallengeStatus.Upcoming;
+            if (now > DateEnd) return ChallengeStatus.Finished;
+            return ChallengeStatus.Active;
         }
     }
 }

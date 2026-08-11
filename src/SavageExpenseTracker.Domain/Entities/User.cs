@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using SavageExpenseTracker.Domain.Constants;
 
 namespace SavageExpenseTracker.Domain.Entities 
 {
@@ -14,7 +16,7 @@ namespace SavageExpenseTracker.Domain.Entities
         public ICollection<Expense> Expenses { get; set; } = new List<Expense>();
 
         // Auth
-        public string Role { get; set; } = "User";
+        public string Role { get; set; } = UserRoles.User;
 
         // Refresh Token
         public string? RefreshToken { get; set; }

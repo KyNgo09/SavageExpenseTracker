@@ -21,9 +21,7 @@ namespace SavageExpenseTracker.Application.Services
 
         public async Task<PagedResultDto<CategoryDto>> GetAllCategoriesAsync(int pageNumber, int pageSize)
         {
-            if (pageNumber < 1) pageNumber = 1;
-            if (pageSize < 1) pageSize = 10;
-            if (pageSize > 100) pageSize = 100;
+            (pageNumber, pageSize) = PaginationHelper.Normalize(pageNumber, pageSize);
 
             var (items, totalCount) = await _categoryRepository.GetAllAsync(pageNumber, pageSize);
 

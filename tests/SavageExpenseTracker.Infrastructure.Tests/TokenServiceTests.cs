@@ -3,8 +3,10 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using FluentAssertions;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SavageExpenseTracker.Domain.Entities;
+using SavageExpenseTracker.Infrastructure.Options;
 using SavageExpenseTracker.Infrastructure.Services;
 using Xunit;
 
@@ -16,7 +18,13 @@ namespace SavageExpenseTracker.Infrastructure.Tests
 
         public TokenServiceTests()
         {
-            _tokenService = new TokenService();
+            var options = Microsoft.Extensions.Options.Options.Create(new JwtOptions
+            {
+                SecretKey = "ThisIsASecretKeyForTestingPurpose1234567890!",
+                Issuer = "TestIssuer",
+                Audience = "TestAudience"
+            });
+            _tokenService = new TokenService(options);
             Environment.SetEnvironmentVariable("JWT_SECRET_KEY", "ThisIsASecretKeyForTestingPurpose1234567890!");
             Environment.SetEnvironmentVariable("JWT_ISSUER", "TestIssuer");
             Environment.SetEnvironmentVariable("JWT_AUDIENCE", "TestAudience");

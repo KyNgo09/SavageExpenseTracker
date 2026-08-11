@@ -16,16 +16,16 @@ namespace SavageExpenseTracker.Application.Tests
     public class UserServiceTests
     {
         private readonly Mock<IUserRepository> _userRepositoryMock;
-        private readonly Mock<ITokenService> _tokenServiceMock;
         private readonly Mock<IPhotoService> _photoServiceMock;
+        private readonly Mock<IPasswordHasher> _passwordHasherMock;
         private readonly UserService _userService;
 
         public UserServiceTests()
         {
             _userRepositoryMock = new Mock<IUserRepository>();
-            _tokenServiceMock = new Mock<ITokenService>();
             _photoServiceMock = new Mock<IPhotoService>();
-            _userService = new UserService(_userRepositoryMock.Object, _tokenServiceMock.Object, _photoServiceMock.Object);
+            _passwordHasherMock = new Mock<IPasswordHasher>();
+            _userService = new UserService(_userRepositoryMock.Object, _photoServiceMock.Object, _passwordHasherMock.Object);
         }
 
         [Fact]
@@ -65,6 +65,7 @@ namespace SavageExpenseTracker.Application.Tests
             // Arrange
             var createDto = new CreateUserDto { Email = "test@example.com", Password = "password123", UserName = "testuser" };
             _userRepositoryMock.Setup(repo => repo.EmailExistsAsync(createDto.Email)).ReturnsAsync(false);
+            _passwordHasherMock.Setup(p => p.HashPassword(createDto.Password)).Returns("hashed_password123");
 
             // Act
             var result = await _userService.RegisterUserAsync(createDto);
@@ -73,134 +74,7 @@ namespace SavageExpenseTracker.Application.Tests
             result.Should().NotBeNull();
             result!.Email.Should().Be(createDto.Email);
             _userRepositoryMock.Verify(repo => repo.AddAsync(It.Is<User>(u => 
-                u.Email == createDto.Email && u.UserName == createDto.UserName && u.PasswordHash != null)), Times.Once);
-        }
-
-        [Fact]
-        public async Task AuthenticateAsync_ShouldReturnNull_WhenUserNotFound()
-        {
-            // Arrange
-            var loginDto = new LoginDto { Email = "test@example.com", Password = "password123" };
-            _userRepositoryMock.Setup(repo => repo.GetByEmailAsync(loginDto.Email)).ReturnsAsync((User)null!);
-
-            // Act
-            var result = await _userService.AuthenticateAsync(loginDto);
-
-            // Assert
-            result.Should().BeNull();
-        }
-
-        [Fact]
-        public async Task AuthenticateAsync_ShouldReturnNull_WhenPasswordIncorrect()
-        {
-            // Arrange
-            var loginDto = new LoginDto { Email = "test@example.com", Password = "wrongpassword" };
-            var user = new User { Email = "test@example.com", PasswordHash = PasswordHasher.HashPassword("correctpassword") };
-            _userRepositoryMock.Setup(repo => repo.GetByEmailAsync(loginDto.Email)).ReturnsAsync(user);
-
-            // Act
-            var result = await _userService.AuthenticateAsync(loginDto);
-
-            // Assert
-            result.Should().BeNull();
-        }
-
-        [Fact]
-        public async Task AuthenticateAsync_ShouldReturnUser_WhenSuccess()
-        {
-            // Arrange
-            var loginDto = new LoginDto { Email = "test@example.com", Password = "password123" };
-            var user = new User { Email = "test@example.com", PasswordHash = PasswordHasher.HashPassword("password123") };
-            _userRepositoryMock.Setup(repo => repo.GetByEmailAsync(loginDto.Email)).ReturnsAsync(user);
-
-            // Act
-            var result = await _userService.AuthenticateAsync(loginDto);
-
-            // Assert
-            result.Should().NotBeNull();
-            result!.Email.Should().Be(user.Email);
-        }
-
-        [Fact]
-        public async Task LoginAsync_ShouldReturnTokenResponse_WhenSuccess()
-        {
-            // Arrange
-            var loginDto = new LoginDto { Email = "test@example.com", Password = "password123" };
-            var user = new User { Id = Guid.NewGuid(), Email = "test@example.com", PasswordHash = PasswordHasher.HashPassword("password123") };
-            _userRepositoryMock.Setup(repo => repo.GetByEmailAsync(loginDto.Email)).ReturnsAsync(user);
-            _tokenServiceMock.Setup(t => t.GenerateAccessToken(user)).Returns("mock_access_token");
-            _tokenServiceMock.Setup(t => t.GenerateRefreshToken()).Returns("mock_refresh_token");
-
-            // Act
-            var result = await _userService.LoginAsync(loginDto);
-
-            // Assert
-            result.Should().NotBeNull();
-            result!.AccessToken.Should().Be("mock_access_token");
-            result.RefreshToken.Should().Be("mock_refresh_token");
-            _userRepositoryMock.Verify(repo => repo.UpdateAsync(It.Is<User>(u => u.RefreshToken == "mock_refresh_token")), Times.Once);
-        }
-
-        [Fact]
-        public async Task ChangePasswordAsync_ShouldThrowException_WhenPasswordsDoNotMatch()
-        {
-            // Arrange
-            var dto = new ChangePasswordDto { NewPassword = "new", ConfirmNewPassword = "different" };
-
-            // Act
-            Func<Task> act = async () => await _userService.ChangePasswordAsync(Guid.NewGuid(), dto);
-
-            // Assert
-            await act.Should().ThrowAsync<InvalidOperationException>()
-                .WithMessage("New password and confirm new password do not match!");
-        }
-
-        [Fact]
-        public async Task ChangePasswordAsync_ShouldThrowException_WhenOldPasswordIncorrect()
-        {
-            // Arrange
-            var userId = Guid.NewGuid();
-            var dto = new ChangePasswordDto { OldPassword = "wrong", NewPassword = "new", ConfirmNewPassword = "new" };
-            var user = new User { Id = userId, PasswordHash = PasswordHasher.HashPassword("correct") };
-            _userRepositoryMock.Setup(repo => repo.GetByIdAsync(userId)).ReturnsAsync(user);
-
-            // Act
-            Func<Task> act = async () => await _userService.ChangePasswordAsync(userId, dto);
-
-            // Assert
-            await act.Should().ThrowAsync<InvalidOperationException>()
-                .WithMessage("Incorrect old password!");
-        }
-
-        [Fact]
-        public async Task ChangePasswordAsync_ShouldThrowException_WhenUserNotFound()
-        {
-            var userId = Guid.NewGuid();
-            var dto = new ChangePasswordDto { OldPassword = "old", NewPassword = "new", ConfirmNewPassword = "new" };
-            _userRepositoryMock.Setup(repo => repo.GetByIdAsync(userId)).ReturnsAsync((User)null!);
-
-            Func<Task> act = async () => await _userService.ChangePasswordAsync(userId, dto);
-
-            await act.Should().ThrowAsync<InvalidOperationException>()
-                .WithMessage("User not found!");
-        }
-
-        [Fact]
-        public async Task ChangePasswordAsync_ShouldUpdatePassword_WhenSuccess()
-        {
-            // Arrange
-            var userId = Guid.NewGuid();
-            var dto = new ChangePasswordDto { OldPassword = "old", NewPassword = "new", ConfirmNewPassword = "new" };
-            var user = new User { Id = userId, PasswordHash = PasswordHasher.HashPassword("old") };
-            _userRepositoryMock.Setup(repo => repo.GetByIdAsync(userId)).ReturnsAsync(user);
-
-            // Act
-            var result = await _userService.ChangePasswordAsync(userId, dto);
-
-            // Assert
-            result.Should().BeTrue();
-            PasswordHasher.VerifyPassword("new", user.PasswordHash).Should().BeTrue();
-            _userRepositoryMock.Verify(repo => repo.UpdateAsync(user), Times.Once);
+                u.Email == createDto.Email && u.UserName == createDto.UserName && u.PasswordHash == "hashed_password123")), Times.Once);
         }
 
         [Fact]

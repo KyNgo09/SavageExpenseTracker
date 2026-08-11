@@ -3,6 +3,7 @@ using SavageExpenseTracker.Infrastructure.Data;
 using SavageExpenseTracker.Application.Interfaces;
 using SavageExpenseTracker.Application.Services;
 using SavageExpenseTracker.Infrastructure.Repositories;
+using SavageExpenseTracker.Infrastructure.Options;
 using SavageExpenseTracker.WebApi.HostedServices;
 using SavageExpenseTracker.WebApi.Services;
 using SavageExpenseTracker.WebApi.Hubs;
@@ -29,8 +30,18 @@ else
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add CORS Policy
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 // Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -70,8 +81,34 @@ var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING"
 builder.Services.AddDbContext<SavageExpenseTrackerDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-// Register repository
+// Configure JwtOptions
+builder.Services.Configure<JwtOptions>(options =>
+{
+    options.SecretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") 
+                       ?? DotNetEnv.Env.GetString("JWT_SECRET_KEY") ?? string.Empty;
+    options.Issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") 
+                    ?? DotNetEnv.Env.GetString("JWT_ISSUER") ?? string.Empty;
+    options.Audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") 
+                     ?? DotNetEnv.Env.GetString("JWT_AUDIENCE") ?? string.Empty;
+});
+
+// Configure CloudinaryOptions
+builder.Services.Configure<CloudinaryOptions>(options =>
+{
+    options.CloudName = Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME") 
+                       ?? DotNetEnv.Env.GetString("CLOUDINARY_CLOUD_NAME") 
+                       ?? builder.Configuration["Cloudinary:CloudName"] ?? string.Empty;
+    options.ApiKey = Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY") 
+                    ?? DotNetEnv.Env.GetString("CLOUDINARY_API_KEY") 
+                    ?? builder.Configuration["Cloudinary:ApiKey"] ?? string.Empty;
+    options.ApiSecret = Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET") 
+                       ?? DotNetEnv.Env.GetString("CLOUDINARY_API_SECRET") 
+                       ?? builder.Configuration["Cloudinary:ApiSecret"] ?? string.Empty;
+});
+
+// Register Infrastructure & Application services
 builder.Services.AddSignalR();
+builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IExpenseRepository, ExpenseRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
@@ -80,6 +117,7 @@ builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
 
 // Register service
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IExpenseService, ExpenseService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IChallengeService, ChallengeService>();
@@ -87,16 +125,17 @@ builder.Services.AddScoped<IChallengeNotificationService, ChallengeNotificationS
 builder.Services.AddHostedService<ChallengeClosingJob>();
 builder.Services.AddScoped<IFriendshipService, FriendshipService>();
 builder.Services.AddScoped<IPhotoService, CloudinaryPhotoService>();
-
-// Register TokenService
 builder.Services.AddScoped<ITokenService, TokenService>();
 
 // Configure JWT authentication
 var jwtSecretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") 
+                   ?? DotNetEnv.Env.GetString("JWT_SECRET_KEY")
                    ?? throw new InvalidOperationException("JWT_SECRET_KEY environment variable is not set.");
 var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") 
+                 ?? DotNetEnv.Env.GetString("JWT_ISSUER")
                  ?? throw new InvalidOperationException("JWT_ISSUER environment variable is not set.");
 var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") 
+                   ?? DotNetEnv.Env.GetString("JWT_AUDIENCE")
                    ?? throw new InvalidOperationException("JWT_AUDIENCE environment variable is not set.");
 
 builder.Services.AddAuthentication(options =>
@@ -112,11 +151,11 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ClockSkew = TimeSpan.Zero, // Optional: Set clock skew to zero for testing purposes
+        ClockSkew = TimeSpan.Zero,
         ValidIssuer = jwtIssuer,
         ValidAudience = jwtAudience,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey)),
-        RoleClaimType = ClaimTypes.Role // Specify the claim type for roles
+        RoleClaimType = ClaimTypes.Role
     }; 
 });
 
@@ -132,6 +171,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("AllowAll");
 app.UseMiddleware<SavageExpenseTracker.WebApi.Middleware.ExceptionHandlingMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();

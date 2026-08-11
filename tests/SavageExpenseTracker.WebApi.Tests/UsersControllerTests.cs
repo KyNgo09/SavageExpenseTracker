@@ -16,13 +16,15 @@ namespace SavageExpenseTracker.WebApi.Tests
     public class UsersControllerTests
     {
         private readonly Mock<IUserService> _userServiceMock;
+        private readonly Mock<IAuthService> _authServiceMock;
         private readonly UsersController _controller;
         private readonly Guid _currentUserId;
 
         public UsersControllerTests()
         {
             _userServiceMock = new Mock<IUserService>();
-            _controller = new UsersController(_userServiceMock.Object);
+            _authServiceMock = new Mock<IAuthService>();
+            _controller = new UsersController(_userServiceMock.Object, _authServiceMock.Object);
             _currentUserId = Guid.NewGuid();
 
             var claims = new[] { new Claim(ClaimTypes.NameIdentifier, _currentUserId.ToString()) };
@@ -110,7 +112,7 @@ namespace SavageExpenseTracker.WebApi.Tests
         {
             // Arrange
             var loginDto = new LoginDto { Email = "test@test.com", Password = "wrongpassword" };
-            _userServiceMock.Setup(s => s.LoginAsync(loginDto)).ReturnsAsync((TokenResponseDto)null!);
+            _authServiceMock.Setup(s => s.LoginAsync(loginDto)).ReturnsAsync((TokenResponseDto)null!);
 
             // Act
             var result = await _controller.Login(loginDto);
@@ -127,7 +129,7 @@ namespace SavageExpenseTracker.WebApi.Tests
             var loginDto = new LoginDto { Email = "test@test.com", Password = "password123" };
             var tokenResponse = new TokenResponseDto { AccessToken = "access-token-123", RefreshToken = "refresh-token-456" };
             
-            _userServiceMock.Setup(s => s.LoginAsync(loginDto)).ReturnsAsync(tokenResponse);
+            _authServiceMock.Setup(s => s.LoginAsync(loginDto)).ReturnsAsync(tokenResponse);
 
             // Act
             var result = await _controller.Login(loginDto);
@@ -158,7 +160,7 @@ namespace SavageExpenseTracker.WebApi.Tests
             var tokenApiModel = new TokenApiModel { AccessToken = "old-access", RefreshToken = "old-refresh" };
             var tokenResponse = new TokenResponseDto { AccessToken = "new-access", RefreshToken = "new-refresh" };
 
-            _userServiceMock.Setup(s => s.RefreshTokenAsync(tokenApiModel)).ReturnsAsync(tokenResponse);
+            _authServiceMock.Setup(s => s.RefreshTokenAsync(tokenApiModel)).ReturnsAsync(tokenResponse);
 
             // Act
             var result = await _controller.RefreshToken(tokenApiModel);
@@ -176,7 +178,7 @@ namespace SavageExpenseTracker.WebApi.Tests
         {
             // Arrange
             var tokenApiModel = new TokenApiModel { AccessToken = "old-access", RefreshToken = "old-refresh" };
-            _userServiceMock.Setup(s => s.RefreshTokenAsync(tokenApiModel)).ReturnsAsync((TokenResponseDto)null!);
+            _authServiceMock.Setup(s => s.RefreshTokenAsync(tokenApiModel)).ReturnsAsync((TokenResponseDto)null!);
 
             // Act
             var result = await _controller.RefreshToken(tokenApiModel);
