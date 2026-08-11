@@ -77,15 +77,13 @@ namespace SavageExpenseTracker.WebApi.Tests
         }
 
         [Fact]
-        public async Task Create_ShouldReturnBadRequest_OnException()
+        public async Task Create_ShouldThrowException_OnException()
         {
             var createDto = new CreateCategoryDto { Name = "Food" };
             _categoryServiceMock.Setup(s => s.CreateCategoryAsync(createDto)).ThrowsAsync(new Exception("Error"));
 
-            var result = await _controller.Create(createDto);
-
-            var badRequest = result.Result.Should().BeOfType<BadRequestObjectResult>().Subject;
-            badRequest.Value.Should().BeEquivalentTo(new { Message = "Error" });
+            Func<Task> act = async () => await _controller.Create(createDto);
+            await act.Should().ThrowAsync<Exception>().WithMessage("Error");
         }
 
         [Fact]
@@ -112,15 +110,13 @@ namespace SavageExpenseTracker.WebApi.Tests
         }
 
         [Fact]
-        public async Task Update_ShouldReturnBadRequest_OnException()
+        public async Task Update_ShouldThrowException_OnException()
         {
             var updateDto = new UpdateCategoryDto { Name = "Food" };
             _categoryServiceMock.Setup(s => s.UpdateCategoryAsync(1, updateDto)).ThrowsAsync(new Exception("Error"));
 
-            var result = await _controller.Update(1, updateDto);
-
-            var badRequest = result.Should().BeOfType<BadRequestObjectResult>().Subject;
-            badRequest.Value.Should().BeEquivalentTo(new { Message = "Error" });
+            Func<Task> act = async () => await _controller.Update(1, updateDto);
+            await act.Should().ThrowAsync<Exception>().WithMessage("Error");
         }
 
         [Fact]
@@ -141,12 +137,11 @@ namespace SavageExpenseTracker.WebApi.Tests
         }
 
         [Fact]
-        public async Task Delete_ShouldReturnBadRequest_OnException()
+        public async Task Delete_ShouldThrowException_OnException()
         {
             _categoryServiceMock.Setup(s => s.DeleteCategoryAsync(1)).ThrowsAsync(new InvalidOperationException("Error"));
-            var result = await _controller.Delete(1);
-            var badRequest = result.Should().BeOfType<BadRequestObjectResult>().Subject;
-            badRequest.Value.Should().BeEquivalentTo(new { Message = "Error" });
+            Func<Task> act = async () => await _controller.Delete(1);
+            await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("Error");
         }
     }
 }

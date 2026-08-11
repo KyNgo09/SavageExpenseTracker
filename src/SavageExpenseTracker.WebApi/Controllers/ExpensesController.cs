@@ -78,27 +78,15 @@ namespace SavageExpenseTracker.WebApi.Controllers
             return NoContent();
         }
 
+        // POST: api/expenses/upload-photo
         [HttpPost("upload-photo")]
-        public async Task<IActionResult> UploadReceipt(IFormFile file, [FromServices] IPhotoService photoService)
+        public async Task<IActionResult> UploadReceipt(IFormFile file)
         {
             if (file == null || file.Length == 0)
                 return BadRequest(new { Message = "Please select an image file!" });
 
-            // Check max file size (10 MB)
-            if (file.Length > 10 * 1024 * 1024)
-                return BadRequest(new { Message = "File size must not exceed 10 MB!" });
-
-            // Check Content-Type & Extension
-            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif", ".heic" };
-            var extension = System.IO.Path.GetExtension(file.FileName).ToLowerInvariant();
-
-            if (string.IsNullOrEmpty(extension) || !allowedExtensions.Contains(extension) || !file.ContentType.StartsWith("image/"))
-            {
-                return BadRequest(new { Message = "Invalid image file format! Only JPG, JPEG, PNG, WEBP, GIF, and HEIC images are allowed." });
-            }
-
             using var stream = file.OpenReadStream();
-            var imageUrl = await photoService.UploadPhotoAsync(stream, file.FileName, PhotoFolders.ExpensePhotos);
+            var imageUrl = await _expenseService.UploadReceiptAsync(stream, file.FileName, file.ContentType, file.Length);
             return Ok(new { ImageUrl = imageUrl });
         }
     }

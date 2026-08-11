@@ -106,19 +106,16 @@ namespace SavageExpenseTracker.WebApi.Tests
         }
 
         [Fact]
-        public async Task Create_ShouldReturnBadRequest_WhenInvalidOperationExceptionThrown()
+        public async Task Create_ShouldThrowException_WhenInvalidOperationExceptionThrown()
         {
             // Arrange
             var createDto = new CreateExpenseDto { Amount = 100 };
             _expenseServiceMock.Setup(s => s.CreateExpenseAsync(It.IsAny<CreateExpenseDto>()))
                 .ThrowsAsync(new InvalidOperationException("Error"));
 
-            // Act
-            var result = await _controller.Create(createDto);
-
-            // Assert
-            var badRequestResult = result.Result.Should().BeOfType<BadRequestObjectResult>().Subject;
-            badRequestResult.Value.Should().BeEquivalentTo(new { Message = "Error" });
+            // Act & Assert
+            Func<Task> act = async () => await _controller.Create(createDto);
+            await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("Error");
         }
 
         [Fact]
@@ -150,14 +147,13 @@ namespace SavageExpenseTracker.WebApi.Tests
         }
 
         [Fact]
-        public async Task Update_ShouldReturnBadRequest_OnException()
+        public async Task Update_ShouldThrowException_OnException()
         {
             var updateDto = new UpdateExpenseDto { Amount = 200 };
             _expenseServiceMock.Setup(s => s.UpdateExpenseAsync(1, _currentUserId, updateDto))
                 .ThrowsAsync(new InvalidOperationException("Error"));
-            var result = await _controller.Update(1, updateDto);
-            var badRequest = result.Should().BeOfType<BadRequestObjectResult>().Subject;
-            badRequest.Value.Should().BeEquivalentTo(new { Message = "Error" });
+            Func<Task> act = async () => await _controller.Update(1, updateDto);
+            await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("Error");
         }
 
         [Fact]
@@ -187,13 +183,12 @@ namespace SavageExpenseTracker.WebApi.Tests
         }
 
         [Fact]
-        public async Task Delete_ShouldReturnBadRequest_OnException()
+        public async Task Delete_ShouldThrowException_OnException()
         {
             _expenseServiceMock.Setup(s => s.DeleteExpenseAsync(1, _currentUserId))
                 .ThrowsAsync(new InvalidOperationException("Error"));
-            var result = await _controller.Delete(1);
-            var badRequest = result.Should().BeOfType<BadRequestObjectResult>().Subject;
-            badRequest.Value.Should().BeEquivalentTo(new { Message = "Error" });
+            Func<Task> act = async () => await _controller.Delete(1);
+            await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("Error");
         }
     }
 }

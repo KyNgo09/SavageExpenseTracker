@@ -13,5 +13,6 @@ namespace SavageExpenseTracker.Application.Interfaces
         Task<ExpenseDto> CreateExpenseAsync(CreateExpenseDto createExpenseDto);
         Task<bool> UpdateExpenseAsync(long id, Guid currentUserId, UpdateExpenseDto updateExpenseDto);
         Task<bool> DeleteExpenseAsync(long id, Guid currentUserId);
+        Task<string> UploadReceiptAsync(System.IO.Stream stream, string fileName, string contentType, long fileLength);
     }
 }

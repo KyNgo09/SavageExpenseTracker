@@ -18,6 +18,7 @@ namespace SavageExpenseTracker.Application.Interfaces
         Task<UserDto> RegisterUserAsync(CreateUserDto createUserDto);
         Task<bool> UpdateUserAsync(Guid id, UpdateUserDto updateUserDto);
         Task<UserDto?> UpdateAvatarAsync(Guid userId, string avatarUrl);
+        Task<UserDto?> UploadAvatarAsync(Guid userId, System.IO.Stream stream, string fileName, string contentType, long fileLength);
         Task<bool> DeleteUserAsync(Guid id);
 
         // Exist Methods

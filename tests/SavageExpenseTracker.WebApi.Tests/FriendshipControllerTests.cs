@@ -72,19 +72,16 @@ namespace SavageExpenseTracker.WebApi.Tests
         }
 
         [Fact]
-        public async Task SendRequest_ShouldReturnBadRequest_WhenInvalidOperationExceptionThrown()
+        public async Task SendRequest_ShouldThrowException_WhenInvalidOperationExceptionThrown()
         {
             // Arrange
             var targetUserId = Guid.NewGuid();
             _friendshipServiceMock.Setup(s => s.SendRequestAsync(_currentUserId, targetUserId))
                 .ThrowsAsync(new InvalidOperationException("Error"));
 
-            // Act
-            var result = await _controller.SendRequest(targetUserId);
-
-            // Assert
-            var badRequestResult = result.Should().BeOfType<BadRequestObjectResult>().Subject;
-            badRequestResult.Value.Should().BeEquivalentTo(new { Message = "Error" });
+            // Act & Assert
+            Func<Task> act = async () => await _controller.SendRequest(targetUserId);
+            await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("Error");
         }
 
         [Fact]
@@ -179,21 +176,19 @@ namespace SavageExpenseTracker.WebApi.Tests
         }
 
         [Fact]
-        public async Task RejectRequest_ShouldReturnBadRequest_OnException()
+        public async Task RejectRequest_ShouldThrowException_OnException()
         {
             _friendshipServiceMock.Setup(s => s.RejectRequestAsync(_currentUserId, 1)).ThrowsAsync(new InvalidOperationException("Error"));
-            var result = await _controller.RejectRequest(1);
-            var badRequestResult = result.Should().BeOfType<BadRequestObjectResult>().Subject;
-            badRequestResult.Value.Should().BeEquivalentTo(new { Message = "Error" });
+            Func<Task> act = async () => await _controller.RejectRequest(1);
+            await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("Error");
         }
 
         [Fact]
-        public async Task AcceptRequest_ShouldReturnBadRequest_OnException()
+        public async Task AcceptRequest_ShouldThrowException_OnException()
         {
             _friendshipServiceMock.Setup(s => s.AcceptRequestAsync(_currentUserId, 1)).ThrowsAsync(new InvalidOperationException("Error"));
-            var result = await _controller.AcceptRequest(1);
-            var badRequestResult = result.Should().BeOfType<BadRequestObjectResult>().Subject;
-            badRequestResult.Value.Should().BeEquivalentTo(new { Message = "Error" });
+            Func<Task> act = async () => await _controller.AcceptRequest(1);
+            await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("Error");
         }
 
         [Fact]
@@ -207,13 +202,12 @@ namespace SavageExpenseTracker.WebApi.Tests
         }
 
         [Fact]
-        public async Task BlockUser_ShouldReturnBadRequest_OnException()
+        public async Task BlockUser_ShouldThrowException_OnException()
         {
             var targetId = Guid.NewGuid();
             _friendshipServiceMock.Setup(s => s.BlockUserAsync(_currentUserId, targetId)).ThrowsAsync(new InvalidOperationException("Error"));
-            var result = await _controller.BlockUser(targetId);
-            var badRequestResult = result.Should().BeOfType<BadRequestObjectResult>().Subject;
-            badRequestResult.Value.Should().BeEquivalentTo(new { Message = "Error" });
+            Func<Task> act = async () => await _controller.BlockUser(targetId);
+            await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("Error");
         }
 
         [Fact]

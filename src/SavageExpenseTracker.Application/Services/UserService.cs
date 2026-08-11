@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using SavageExpenseTracker.Application.Constants;
 using SavageExpenseTracker.Application.Dtos;
 using SavageExpenseTracker.Application.Dtos.User;
 using SavageExpenseTracker.Application.Interfaces;
@@ -15,11 +16,13 @@ namespace SavageExpenseTracker.Application.Services
     {
         private readonly IUserRepository _userRepository;
         private readonly ITokenService _tokenService;
+        private readonly IPhotoService _photoService;
 
-        public UserService(IUserRepository userRepository, ITokenService tokenService)
+        public UserService(IUserRepository userRepository, ITokenService tokenService, IPhotoService photoService)
         {
             _userRepository = userRepository;
             _tokenService = tokenService;
+            _photoService = photoService;
         }
         
         public async Task<PagedResultDto<UserDto>> GetAllUsersAsync(int pageNumber, int pageSize)
@@ -237,6 +240,26 @@ namespace SavageExpenseTracker.Application.Services
             await _userRepository.UpdateAsync(user);
 
             return user.ToDto();
+        }
+
+        public async Task<UserDto?> UploadAvatarAsync(Guid userId, System.IO.Stream stream, string fileName, string contentType, long fileLength)
+        {
+            if (stream == null || fileLength == 0)
+                throw new InvalidOperationException("Please select an image file for avatar!");
+
+            if (fileLength > 5 * 1024 * 1024)
+                throw new InvalidOperationException("Avatar file size must not exceed 5 MB!");
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+            var extension = System.IO.Path.GetExtension(fileName)?.ToLowerInvariant();
+
+            if (string.IsNullOrEmpty(extension) || !allowedExtensions.Contains(extension) || !contentType.StartsWith("image/"))
+            {
+                throw new InvalidOperationException("Invalid image file format! Only JPG, JPEG, PNG, and WEBP images are allowed.");
+            }
+
+            var avatarUrl = await _photoService.UploadPhotoAsync(stream, fileName, PhotoFolders.UserAvatars);
+            return await UpdateAvatarAsync(userId, avatarUrl);
         }
 
         public async Task<PagedResultDto<UserDto>> SearchUserByEmailAsync(string query, int pageNumber, int pageSize)

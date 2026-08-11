@@ -93,15 +93,13 @@ namespace SavageExpenseTracker.WebApi.Tests
         }
 
         [Fact]
-        public async Task Create_ShouldReturnBadRequest_OnException()
+        public async Task Create_ShouldThrowException_OnException()
         {
             var createDto = new CreateChallengeDto { Name = "C1" };
             _challengeServiceMock.Setup(s => s.CreateChallengeAsync(createDto)).ThrowsAsync(new Exception("Error"));
 
-            var result = await _controller.Create(createDto);
-
-            var badRequest = result.Result.Should().BeOfType<BadRequestObjectResult>().Subject;
-            badRequest.Value.Should().BeEquivalentTo(new { Message = "Error" });
+            Func<Task> act = async () => await _controller.Create(createDto);
+            await act.Should().ThrowAsync<Exception>().WithMessage("Error");
         }
 
         [Fact]
@@ -124,12 +122,11 @@ namespace SavageExpenseTracker.WebApi.Tests
         }
 
         [Fact]
-        public async Task Join_ShouldReturnBadRequest_OnException()
+        public async Task Join_ShouldThrowException_OnException()
         {
             _challengeServiceMock.Setup(s => s.JoinChallengeAsync(1, _currentUserId)).ThrowsAsync(new InvalidOperationException("Error"));
-            var result = await _controller.Join(1);
-            var badRequest = result.Should().BeOfType<BadRequestObjectResult>().Subject;
-            badRequest.Value.Should().BeEquivalentTo(new { Message = "Error" });
+            Func<Task> act = async () => await _controller.Join(1);
+            await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("Error");
         }
 
         [Fact]
@@ -149,12 +146,11 @@ namespace SavageExpenseTracker.WebApi.Tests
         }
 
         [Fact]
-        public async Task Leave_ShouldReturnBadRequest_OnException()
+        public async Task Leave_ShouldThrowException_OnException()
         {
             _challengeServiceMock.Setup(s => s.LeaveChallengeAsync(1, _currentUserId)).ThrowsAsync(new InvalidOperationException("Error"));
-            var result = await _controller.Leave(1);
-            var badRequest = result.Should().BeOfType<BadRequestObjectResult>().Subject;
-            badRequest.Value.Should().BeEquivalentTo(new { Message = "Error" });
+            Func<Task> act = async () => await _controller.Leave(1);
+            await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("Error");
         }
 
         [Fact]

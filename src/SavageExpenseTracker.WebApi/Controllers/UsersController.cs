@@ -160,26 +160,13 @@ namespace SavageExpenseTracker.WebApi.Controllers
         // POST: api/users/me/avatar
         [HttpPost("me/avatar")]
         [Authorize]
-        public async Task<ActionResult<UserDto>> UploadAvatar(IFormFile file, [FromServices] IPhotoService photoService)
+        public async Task<ActionResult<UserDto>> UploadAvatar(IFormFile file)
         {
             if (file == null || file.Length == 0)
                 return BadRequest(new { Message = "Please select an image file for avatar!" });
 
-            if (file.Length > 5 * 1024 * 1024)
-                return BadRequest(new { Message = "Avatar file size must not exceed 5 MB!" });
-
-            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
-            var extension = System.IO.Path.GetExtension(file.FileName).ToLowerInvariant();
-
-            if (string.IsNullOrEmpty(extension) || !allowedExtensions.Contains(extension) || !file.ContentType.StartsWith("image/"))
-            {
-                return BadRequest(new { Message = "Invalid image file format! Only JPG, JPEG, PNG, and WEBP images are allowed." });
-            }
-
             using var stream = file.OpenReadStream();
-            var avatarUrl = await photoService.UploadPhotoAsync(stream, file.FileName, PhotoFolders.UserAvatars);
-
-            var updatedUser = await _userService.UpdateAvatarAsync(User.GetUserId(), avatarUrl);
+            var updatedUser = await _userService.UploadAvatarAsync(User.GetUserId(), stream, file.FileName, file.ContentType, file.Length);
             if (updatedUser == null)
                 return NotFound(new { Message = "User not found!" });
 

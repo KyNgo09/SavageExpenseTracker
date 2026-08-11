@@ -16,13 +16,15 @@ namespace SavageExpenseTracker.Application.Tests
     {
         private readonly Mock<IExpenseRepository> _expenseRepositoryMock;
         private readonly Mock<IUserRepository> _userRepositoryMock;
+        private readonly Mock<IPhotoService> _photoServiceMock;
         private readonly ExpenseService _expenseService;
 
         public ExpenseServiceTests()
         {
             _expenseRepositoryMock = new Mock<IExpenseRepository>();
             _userRepositoryMock = new Mock<IUserRepository>();
-            _expenseService = new ExpenseService(_expenseRepositoryMock.Object, _userRepositoryMock.Object);
+            _photoServiceMock = new Mock<IPhotoService>();
+            _expenseService = new ExpenseService(_expenseRepositoryMock.Object, _userRepositoryMock.Object, _photoServiceMock.Object);
         }
 
         [Fact]

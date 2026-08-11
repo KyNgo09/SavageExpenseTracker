@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using SavageExpenseTracker.Application.Constants;
 using SavageExpenseTracker.Application.Dtos;
 using SavageExpenseTracker.Application.Dtos.Expense;
 using SavageExpenseTracker.Application.Helpers;
@@ -14,11 +15,13 @@ namespace SavageExpenseTracker.Application.Services
     {
         private readonly IExpenseRepository _expenseRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IPhotoService _photoService;
 
-        public ExpenseService(IExpenseRepository expenseRepository, IUserRepository userRepository)
+        public ExpenseService(IExpenseRepository expenseRepository, IUserRepository userRepository, IPhotoService photoService)
         {
             _expenseRepository = expenseRepository;
             _userRepository = userRepository;
+            _photoService = photoService;
         }
 
         public async Task<PagedResultDto<ExpenseDto>> GetUserExpensesAsync(Guid userId, int pageNumber, int pageSize)
@@ -104,5 +107,24 @@ namespace SavageExpenseTracker.Application.Services
             await _expenseRepository.DeleteAsync(id);
             return true;
         }
-    }   
+
+        public async Task<string> UploadReceiptAsync(System.IO.Stream stream, string fileName, string contentType, long fileLength)
+        {
+            if (stream == null || fileLength == 0)
+                throw new InvalidOperationException("Please select an image file!");
+
+            if (fileLength > 10 * 1024 * 1024)
+                throw new InvalidOperationException("File size must not exceed 10 MB!");
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif", ".heic" };
+            var extension = System.IO.Path.GetExtension(fileName)?.ToLowerInvariant();
+
+            if (string.IsNullOrEmpty(extension) || !allowedExtensions.Contains(extension) || !contentType.StartsWith("image/"))
+            {
+                throw new InvalidOperationException("Invalid image file format! Only JPG, JPEG, PNG, WEBP, GIF, and HEIC images are allowed.");
+            }
+
+            return await _photoService.UploadPhotoAsync(stream, fileName, PhotoFolders.ExpensePhotos);
+        }
+    }
 }
