@@ -12,8 +12,8 @@ using SavageExpenseTracker.Infrastructure.Data;
 namespace SavageExpenseTracker.Infrastructure.Migrations
 {
     [DbContext(typeof(SavageExpenseTrackerDbContext))]
-    [Migration("20260810034906_AddIndexesToExpenses")]
-    partial class AddIndexesToExpenses
+    [Migration("20260811044511_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -234,6 +234,9 @@ namespace SavageExpenseTracker.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id")
                         .HasDefaultValueSql("uuid_generate_v4()");
+
+                    b.Property<string>("AvatarUrl")
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()

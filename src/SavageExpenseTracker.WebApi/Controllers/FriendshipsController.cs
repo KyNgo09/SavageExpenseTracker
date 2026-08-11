@@ -9,13 +9,13 @@ using SavageExpenseTracker.WebApi.Extensions;
 namespace SavageExpenseTracker.WebApi.Controllers
 {
     [ApiController]
-    [Route("/api/friendships")]
+    [Route("api/friendships")]
     [Authorize]
-    public class FriendshipController : ControllerBase
+    public class FriendshipsController : ControllerBase
     {
         private readonly IFriendshipService _friendshipService;
 
-        public FriendshipController(IFriendshipService friendshipService)
+        public FriendshipsController(IFriendshipService friendshipService)
         {
             _friendshipService = friendshipService;
         }

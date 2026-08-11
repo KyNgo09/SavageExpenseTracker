@@ -16,12 +16,14 @@ namespace SavageExpenseTracker.Application.Tests
     public class UserServiceTests
     {
         private readonly Mock<IUserRepository> _userRepositoryMock;
+        private readonly Mock<ITokenService> _tokenServiceMock;
         private readonly UserService _userService;
 
         public UserServiceTests()
         {
             _userRepositoryMock = new Mock<IUserRepository>();
-            _userService = new UserService(_userRepositoryMock.Object);
+            _tokenServiceMock = new Mock<ITokenService>();
+            _userService = new UserService(_userRepositoryMock.Object, _tokenServiceMock.Object);
         }
 
         [Fact]
@@ -115,6 +117,26 @@ namespace SavageExpenseTracker.Application.Tests
             // Assert
             result.Should().NotBeNull();
             result!.Email.Should().Be(user.Email);
+        }
+
+        [Fact]
+        public async Task LoginAsync_ShouldReturnTokenResponse_WhenSuccess()
+        {
+            // Arrange
+            var loginDto = new LoginDto { Email = "test@example.com", Password = "password123" };
+            var user = new User { Id = Guid.NewGuid(), Email = "test@example.com", PasswordHash = PasswordHasher.HashPassword("password123") };
+            _userRepositoryMock.Setup(repo => repo.GetByEmailAsync(loginDto.Email)).ReturnsAsync(user);
+            _tokenServiceMock.Setup(t => t.GenerateAccessToken(user)).Returns("mock_access_token");
+            _tokenServiceMock.Setup(t => t.GenerateRefreshToken()).Returns("mock_refresh_token");
+
+            // Act
+            var result = await _userService.LoginAsync(loginDto);
+
+            // Assert
+            result.Should().NotBeNull();
+            result!.AccessToken.Should().Be("mock_access_token");
+            result.RefreshToken.Should().Be("mock_refresh_token");
+            _userRepositoryMock.Verify(repo => repo.UpdateAsync(It.Is<User>(u => u.RefreshToken == "mock_refresh_token")), Times.Once);
         }
 
         [Fact]

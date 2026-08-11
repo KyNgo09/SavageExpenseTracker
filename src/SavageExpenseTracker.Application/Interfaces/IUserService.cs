@@ -17,6 +17,7 @@ namespace SavageExpenseTracker.Application.Interfaces
         // Create, Update, Delete Methods
         Task<UserDto> RegisterUserAsync(CreateUserDto createUserDto);
         Task<bool> UpdateUserAsync(Guid id, UpdateUserDto updateUserDto);
+        Task<UserDto?> UpdateAvatarAsync(Guid userId, string avatarUrl);
         Task<bool> DeleteUserAsync(Guid id);
 
         // Exist Methods
@@ -24,7 +25,9 @@ namespace SavageExpenseTracker.Application.Interfaces
         Task<bool> UserNameExistsAsync(string username);
 
         // Authentication Methods
-        Task<UserDto?>AuthenticateAsync(LoginDto loginDto);
+        Task<UserDto?> AuthenticateAsync(LoginDto loginDto);
+        Task<TokenResponseDto?> LoginAsync(LoginDto loginDto);
+        Task<TokenResponseDto?> RefreshTokenAsync(TokenApiModel tokenApiModel);
         Task<bool> ChangePasswordAsync(Guid id, ChangePasswordDto changePasswordDto);
         
         // Search Methods

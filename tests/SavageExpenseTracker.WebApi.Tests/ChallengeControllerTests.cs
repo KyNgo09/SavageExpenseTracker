@@ -6,6 +6,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using SavageExpenseTracker.Application.Dtos;
 using SavageExpenseTracker.Application.Dtos.Challenge;
 using SavageExpenseTracker.Application.Interfaces;
 using SavageExpenseTracker.WebApi.Controllers;
@@ -16,13 +17,13 @@ namespace SavageExpenseTracker.WebApi.Tests
     public class ChallengeControllerTests
     {
         private readonly Mock<IChallengeService> _challengeServiceMock;
-        private readonly ChallengeController _controller;
+        private readonly ChallengesController _controller;
         private readonly Guid _currentUserId;
 
         public ChallengeControllerTests()
         {
             _challengeServiceMock = new Mock<IChallengeService>();
-            _controller = new ChallengeController(_challengeServiceMock.Object);
+            _controller = new ChallengesController(_challengeServiceMock.Object);
             _currentUserId = Guid.NewGuid();
 
             var claims = new[] { new Claim(ClaimTypes.NameIdentifier, _currentUserId.ToString()) };
@@ -37,13 +38,19 @@ namespace SavageExpenseTracker.WebApi.Tests
         [Fact]
         public async Task GetAll_ShouldReturnOk_WithData()
         {
-            var list = new List<ChallengeDto> { new ChallengeDto { Id = 1 } };
-            _challengeServiceMock.Setup(s => s.GetAllChallengesAsync()).ReturnsAsync(list);
+            var pagedResult = new PagedResultDto<ChallengeDto>
+            {
+                Items = new List<ChallengeDto> { new ChallengeDto { Id = 1 } },
+                TotalCount = 1,
+                PageNumber = 1,
+                PageSize = 10
+            };
+            _challengeServiceMock.Setup(s => s.GetAllChallengesAsync(1, 10)).ReturnsAsync(pagedResult);
             
-            var result = await _controller.GetAll();
+            var result = await _controller.GetAll(1, 10);
             
             var ok = result.Result.Should().BeOfType<OkObjectResult>().Subject;
-            ok.Value.Should().BeEquivalentTo(list);
+            ok.Value.Should().BeEquivalentTo(pagedResult);
         }
 
         [Fact]

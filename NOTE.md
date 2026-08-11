@@ -22,8 +22,8 @@
 ---
 
 ### 🖼️ 3. Tải & Nén Tối ưu Ảnh Hóa đơn (Image Processing)
-- [ ] **Image Compression Service**: Sử dụng `ImageSharp` hoặc `Cloudinary API` ở Backend để nén/giảm dung lượng ảnh hóa đơn trước khi lưu trữ.
-- [ ] **Endpoint Upload Ảnh (`POST /api/expenses/upload-image`)**.
+- [x] **Cloudinary Photo Service**: Nén và tối ưu hóa ảnh tự động bằng Cloudinary API (`CloudinaryPhotoService.cs`).
+- [x] **Endpoint Upload Ảnh (`POST /api/expenses/upload-photo`)**: Nhận ảnh hóa đơn và trả về link CDN an toàn.
 
 ---
 

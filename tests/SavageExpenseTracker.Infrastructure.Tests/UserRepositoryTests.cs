@@ -118,8 +118,8 @@ namespace SavageExpenseTracker.Infrastructure.Tests
             await _context.Users.AddAsync(new User { Id = Guid.NewGuid(), Email = "2@test.com", UserName = "2", PasswordHash = "hash" });
             await _context.SaveChangesAsync();
 
-            var result = await _repository.GetAllAsync();
-            result.Should().HaveCount(2);
+            var (items, totalCount) = await _repository.GetAllAsync(1, 10);
+            items.Should().HaveCount(2);
         }
 
         [Fact]

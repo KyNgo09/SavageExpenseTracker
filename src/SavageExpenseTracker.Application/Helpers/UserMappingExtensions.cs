@@ -13,6 +13,7 @@ namespace SavageExpenseTracker.Application.Helpers
                 Email = user.Email,
                 UserName = user.UserName,
                 HourlyRate = user.HourlyRate,
+                AvatarUrl = user.AvatarUrl,
                 CreatedAt = user.CreatedAt
             };
         }

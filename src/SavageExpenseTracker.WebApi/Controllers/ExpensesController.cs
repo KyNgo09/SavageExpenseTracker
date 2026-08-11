@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using SavageExpenseTracker.Application.Constants;
 using SavageExpenseTracker.Application.Dtos;
 using SavageExpenseTracker.Application.Dtos.Expense;
 using SavageExpenseTracker.Application.Interfaces;
@@ -44,7 +47,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
 
         // POST: api/expenses
         [HttpPost]
-        public async Task<ActionResult<ExpenseDto>> Create(CreateExpenseDto createExpenseDto)
+        public async Task<ActionResult<ExpenseDto>> Create([FromBody] CreateExpenseDto createExpenseDto)
         {
             createExpenseDto.UserId = User.GetUserId();
             var createdExpense = await _expenseService.CreateExpenseAsync(createExpenseDto);
@@ -73,6 +76,30 @@ namespace SavageExpenseTracker.WebApi.Controllers
                 return NotFound(new { Message = $"Can't find Expense with Id: {id}" });
             }
             return NoContent();
+        }
+
+        [HttpPost("upload-photo")]
+        public async Task<IActionResult> UploadReceipt(IFormFile file, [FromServices] IPhotoService photoService)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest(new { Message = "Please select an image file!" });
+
+            // Check max file size (10 MB)
+            if (file.Length > 10 * 1024 * 1024)
+                return BadRequest(new { Message = "File size must not exceed 10 MB!" });
+
+            // Check Content-Type & Extension
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif", ".heic" };
+            var extension = System.IO.Path.GetExtension(file.FileName).ToLowerInvariant();
+
+            if (string.IsNullOrEmpty(extension) || !allowedExtensions.Contains(extension) || !file.ContentType.StartsWith("image/"))
+            {
+                return BadRequest(new { Message = "Invalid image file format! Only JPG, JPEG, PNG, WEBP, GIF, and HEIC images are allowed." });
+            }
+
+            using var stream = file.OpenReadStream();
+            var imageUrl = await photoService.UploadPhotoAsync(stream, file.FileName, PhotoFolders.ExpensePhotos);
+            return Ok(new { ImageUrl = imageUrl });
         }
     }
 }

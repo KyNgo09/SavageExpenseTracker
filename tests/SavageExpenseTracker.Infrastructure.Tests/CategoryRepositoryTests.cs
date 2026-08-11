@@ -48,8 +48,8 @@ namespace SavageExpenseTracker.Infrastructure.Tests
             await _context.Categories.AddAsync(new Category { Name = "Cat 2" });
             await _context.SaveChangesAsync();
 
-            var result = await _repository.GetAllAsync();
-            result.Should().HaveCount(2);
+            var (items, totalCount) = await _repository.GetAllAsync(1, 10);
+            items.Should().HaveCount(2);
         }
 
         [Fact]

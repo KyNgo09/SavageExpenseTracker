@@ -43,10 +43,11 @@ namespace SavageExpenseTracker.Application.Services
             var expense = await _expenseRepository.GetByIdAsync(id);
             return expense?.ToDto();
         }
+
         public async Task<ExpenseDto> CreateExpenseAsync(CreateExpenseDto createExpenseDto)
         {
             var user = await _userRepository.GetByIdAsync(createExpenseDto.UserId);
-            if(user == null)
+            if (user == null)
             {
                 throw new InvalidOperationException("User not found!");
             }
@@ -61,14 +62,15 @@ namespace SavageExpenseTracker.Application.Services
                 TimeWork = timeWork,
                 CreatedAt = DateTime.UtcNow,
                 AppliedHourlyRate = user.HourlyRate,
-                CategoryId = createExpenseDto.CategoryId
+                CategoryId = createExpenseDto.CategoryId,
+                ImageUrl = createExpenseDto.ImageUrl
             };
 
             await _expenseRepository.AddAsync(expense);
             return expense.ToDto();
         }
 
-         public async Task<bool> UpdateExpenseAsync(long id, Guid currentUserId, UpdateExpenseDto updateExpenseDto)
+        public async Task<bool> UpdateExpenseAsync(long id, Guid currentUserId, UpdateExpenseDto updateExpenseDto)
         {
             var expense = await _expenseRepository.GetByIdAsync(id);
             if (expense == null) return false;

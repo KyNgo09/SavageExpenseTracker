@@ -49,8 +49,8 @@ namespace SavageExpenseTracker.Infrastructure.Tests
             await _context.Challenges.AddAsync(new Challenge { Name = "C2" });
             await _context.SaveChangesAsync();
 
-            var result = await _repository.GetAllAsync();
-            result.Should().HaveCount(2);
+            var (items, totalCount) = await _repository.GetAllAsync(1, 10);
+            items.Should().HaveCount(2);
         }
 
         [Fact]

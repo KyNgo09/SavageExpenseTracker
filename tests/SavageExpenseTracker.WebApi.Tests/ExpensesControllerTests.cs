@@ -6,6 +6,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using SavageExpenseTracker.Application.Dtos;
 using SavageExpenseTracker.Application.Dtos.Expense;
 using SavageExpenseTracker.Application.Interfaces;
 using SavageExpenseTracker.WebApi.Controllers;
@@ -38,16 +39,22 @@ namespace SavageExpenseTracker.WebApi.Tests
         public async Task GetMyExpenses_ShouldReturnOkResult_WithExpenses()
         {
             // Arrange
-            var expenses = new List<ExpenseDto> { new ExpenseDto { Id = 1, Amount = 100 } };
-            _expenseServiceMock.Setup(s => s.GetUserExpensesAsync(_currentUserId)).ReturnsAsync(expenses);
+            var pagedResult = new PagedResultDto<ExpenseDto>
+            {
+                Items = new List<ExpenseDto> { new ExpenseDto { Id = 1, Amount = 100 } },
+                TotalCount = 1,
+                PageNumber = 1,
+                PageSize = 10
+            };
+            _expenseServiceMock.Setup(s => s.GetUserExpensesAsync(_currentUserId, 1, 10)).ReturnsAsync(pagedResult);
 
             // Act
-            var result = await _controller.GetMyExpenses();
+            var result = await _controller.GetMyExpenses(1, 10);
 
             // Assert
             var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
-            var returnedExpenses = okResult.Value.Should().BeAssignableTo<IEnumerable<ExpenseDto>>().Subject;
-            returnedExpenses.Should().HaveCount(1);
+            var returnedResult = okResult.Value.Should().BeAssignableTo<PagedResultDto<ExpenseDto>>().Subject;
+            returnedResult.Items.Should().HaveCount(1);
         }
 
         [Fact]

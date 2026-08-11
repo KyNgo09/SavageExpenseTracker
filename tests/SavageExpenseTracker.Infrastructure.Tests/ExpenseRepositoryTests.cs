@@ -84,9 +84,8 @@ namespace SavageExpenseTracker.Infrastructure.Tests
             await _context.Expenses.AddRangeAsync(expense1, expense2, expense3);
             await _context.SaveChangesAsync();
 
-            // Act
-            var results = await _repository.GetByUserIdAsync(userId);
-            var resultsList = results.ToList();
+            var (items, totalCount) = await _repository.GetByUserIdAsync(userId, 1, 10);
+            var resultsList = items.ToList();
 
             // Assert
             resultsList.Should().HaveCount(2);

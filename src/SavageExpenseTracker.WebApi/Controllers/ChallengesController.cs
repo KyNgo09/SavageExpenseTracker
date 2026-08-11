@@ -13,11 +13,11 @@ namespace SavageExpenseTracker.WebApi.Controllers
     [ApiController]
     [Route("api/challenges")]
     [Authorize]
-    public class ChallengeController : ControllerBase
+    public class ChallengesController : ControllerBase
     {
         private readonly IChallengeService _challengeService;
 
-        public ChallengeController(IChallengeService challengeService)
+        public ChallengesController(IChallengeService challengeService)
         {
             _challengeService = challengeService;
         }

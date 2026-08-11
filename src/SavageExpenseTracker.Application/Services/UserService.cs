@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using SavageExpenseTracker.Application.Dtos;
 using SavageExpenseTracker.Application.Dtos.User;
@@ -15,10 +14,12 @@ namespace SavageExpenseTracker.Application.Services
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
+        private readonly ITokenService _tokenService;
 
-        public UserService(IUserRepository userRepository)
+        public UserService(IUserRepository userRepository, ITokenService tokenService)
         {
             _userRepository = userRepository;
+            _tokenService = tokenService;
         }
         
         public async Task<PagedResultDto<UserDto>> GetAllUsersAsync(int pageNumber, int pageSize)
@@ -86,7 +87,7 @@ namespace SavageExpenseTracker.Application.Services
                 Email = createUserDto.Email,
                 UserName = createUserDto.UserName,
                 PasswordHash = passwordHash,
-                HourlyRate = createUserDto.HourlyRate,
+                HourlyRate = createUserDto.HourlyRate,                
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -136,6 +137,71 @@ namespace SavageExpenseTracker.Application.Services
             return user.ToDto();
         }
 
+        public async Task<TokenResponseDto?> LoginAsync(LoginDto loginDto)
+        {
+            var user = await _userRepository.GetByEmailAsync(loginDto.Email);
+            if (user == null || !PasswordHasher.VerifyPassword(loginDto.Password, user.PasswordHash))
+            {
+                return null;
+            }
+
+            var accessToken = _tokenService.GenerateAccessToken(user);
+            var refreshToken = _tokenService.GenerateRefreshToken();
+
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryDate = DateTime.UtcNow.AddDays(7);
+            await _userRepository.UpdateAsync(user);
+
+            return new TokenResponseDto
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken
+            };
+        }
+
+        public async Task<TokenResponseDto?> RefreshTokenAsync(TokenApiModel tokenApiModel)
+        {
+            if (tokenApiModel == null || string.IsNullOrEmpty(tokenApiModel.AccessToken) || string.IsNullOrEmpty(tokenApiModel.RefreshToken))
+            {
+                return null;
+            }
+
+            ClaimsPrincipal principal;
+            try
+            {
+                principal = _tokenService.GetPrincipalFromExpiredToken(tokenApiModel.AccessToken);
+            }
+            catch
+            {
+                return null;
+            }
+
+            var userIdString = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(userIdString, out Guid userId))
+            {
+                return null;
+            }
+
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null || user.RefreshToken != tokenApiModel.RefreshToken || user.RefreshTokenExpiryDate <= DateTime.UtcNow)
+            {
+                return null;
+            }
+
+            var newAccessToken = _tokenService.GenerateAccessToken(user);
+            var newRefreshToken = _tokenService.GenerateRefreshToken();
+
+            user.RefreshToken = newRefreshToken;
+            user.RefreshTokenExpiryDate = DateTime.UtcNow.AddDays(7);
+            await _userRepository.UpdateAsync(user);
+
+            return new TokenResponseDto
+            {
+                AccessToken = newAccessToken,
+                RefreshToken = newRefreshToken
+            };
+        }
+
         public async Task<bool> ChangePasswordAsync(Guid id, ChangePasswordDto changePasswordDto)
         {
             if (changePasswordDto.NewPassword != changePasswordDto.ConfirmNewPassword)
@@ -160,6 +226,17 @@ namespace SavageExpenseTracker.Application.Services
             
             await _userRepository.UpdateAsync(user);
             return true;
+        }
+
+        public async Task<UserDto?> UpdateAvatarAsync(Guid userId, string avatarUrl)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null) return null;
+
+            user.AvatarUrl = avatarUrl;
+            await _userRepository.UpdateAsync(user);
+
+            return user.ToDto();
         }
 
         public async Task<PagedResultDto<UserDto>> SearchUserByEmailAsync(string query, int pageNumber, int pageSize)

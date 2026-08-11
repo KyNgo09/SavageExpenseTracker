@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace SavageExpenseTracker.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class AddIndexesToExpenses : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -36,6 +36,7 @@ namespace SavageExpenseTracker.Infrastructure.Migrations
                     password_hash = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     hourly_rate = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 20000m),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()"),
+                    AvatarUrl = table.Column<string>(type: "text", nullable: true),
                     Role = table.Column<string>(type: "text", nullable: false),
                     RefreshToken = table.Column<string>(type: "text", nullable: true),
                     RefreshTokenExpiryDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)

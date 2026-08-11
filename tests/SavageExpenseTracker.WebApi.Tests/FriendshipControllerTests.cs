@@ -6,6 +6,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using SavageExpenseTracker.Application.Dtos;
 using SavageExpenseTracker.Application.Dtos.Friendship;
 using SavageExpenseTracker.Application.Interfaces;
 using SavageExpenseTracker.WebApi.Controllers;
@@ -16,13 +17,13 @@ namespace SavageExpenseTracker.WebApi.Tests
     public class FriendshipControllerTests
     {
         private readonly Mock<IFriendshipService> _friendshipServiceMock;
-        private readonly FriendshipController _controller;
+        private readonly FriendshipsController _controller;
         private readonly Guid _currentUserId;
 
         public FriendshipControllerTests()
         {
             _friendshipServiceMock = new Mock<IFriendshipService>();
-            _controller = new FriendshipController(_friendshipServiceMock.Object);
+            _controller = new FriendshipsController(_friendshipServiceMock.Object);
             _currentUserId = Guid.NewGuid();
 
             var claims = new[] { new Claim(ClaimTypes.NameIdentifier, _currentUserId.ToString()) };
@@ -38,15 +39,21 @@ namespace SavageExpenseTracker.WebApi.Tests
         public async Task GetFriends_ShouldReturnOk_WithFriendsList()
         {
             // Arrange
-            var friends = new List<UserProfileDto> { new UserProfileDto { Id = Guid.NewGuid(), UserName = "friend1" } };
-            _friendshipServiceMock.Setup(s => s.GetFriendsListAsync(_currentUserId)).ReturnsAsync(friends);
+            var pagedResult = new PagedResultDto<UserProfileDto>
+            {
+                Items = new List<UserProfileDto> { new UserProfileDto { Id = Guid.NewGuid(), UserName = "friend1" } },
+                TotalCount = 1,
+                PageNumber = 1,
+                PageSize = 10
+            };
+            _friendshipServiceMock.Setup(s => s.GetFriendsListAsync(_currentUserId, 1, 10)).ReturnsAsync(pagedResult);
 
             // Act
-            var result = await _controller.GetFriends();
+            var result = await _controller.GetFriends(1, 10);
 
             // Assert
             var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
-            okResult.Value.Should().BeEquivalentTo(friends);
+            okResult.Value.Should().BeEquivalentTo(pagedResult);
         }
 
         [Fact]
@@ -139,13 +146,19 @@ namespace SavageExpenseTracker.WebApi.Tests
         [Fact]
         public async Task GetPendingRequests_ShouldReturnOk_WithRequestsList()
         {
-            var requests = new List<FriendshipRequestDto> { new FriendshipRequestDto { FriendshipId = 1, SenderName = "sender" } };
-            _friendshipServiceMock.Setup(s => s.GetPendingRequestsAsync(_currentUserId)).ReturnsAsync(requests);
+            var pagedResult = new PagedResultDto<FriendshipRequestDto>
+            {
+                Items = new List<FriendshipRequestDto> { new FriendshipRequestDto { FriendshipId = 1, SenderName = "sender" } },
+                TotalCount = 1,
+                PageNumber = 1,
+                PageSize = 10
+            };
+            _friendshipServiceMock.Setup(s => s.GetPendingRequestsAsync(_currentUserId, 1, 10)).ReturnsAsync(pagedResult);
 
-            var result = await _controller.GetPendingRequests();
+            var result = await _controller.GetPendingRequests(1, 10);
 
             var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
-            okResult.Value.Should().BeEquivalentTo(requests);
+            okResult.Value.Should().BeEquivalentTo(pagedResult);
         }
 
         [Fact]

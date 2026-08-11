@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using SavageExpenseTracker.Application.Dtos;
 using SavageExpenseTracker.Application.Dtos.Category;
 using SavageExpenseTracker.Application.Interfaces;
 using SavageExpenseTracker.WebApi.Controllers;
@@ -25,13 +26,19 @@ namespace SavageExpenseTracker.WebApi.Tests
         [Fact]
         public async Task GetAll_ShouldReturnOk_WithCategories()
         {
-            var categories = new List<CategoryDto> { new CategoryDto { Id = 1, Name = "Food" } };
-            _categoryServiceMock.Setup(s => s.GetAllCategoriesAsync()).ReturnsAsync(categories);
+            var pagedResult = new PagedResultDto<CategoryDto>
+            {
+                Items = new List<CategoryDto> { new CategoryDto { Id = 1, Name = "Food" } },
+                TotalCount = 1,
+                PageNumber = 1,
+                PageSize = 10
+            };
+            _categoryServiceMock.Setup(s => s.GetAllCategoriesAsync(1, 10)).ReturnsAsync(pagedResult);
 
-            var result = await _controller.GetAll();
+            var result = await _controller.GetAll(1, 10);
 
             var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
-            okResult.Value.Should().BeEquivalentTo(categories);
+            okResult.Value.Should().BeEquivalentTo(pagedResult);
         }
 
         [Fact]

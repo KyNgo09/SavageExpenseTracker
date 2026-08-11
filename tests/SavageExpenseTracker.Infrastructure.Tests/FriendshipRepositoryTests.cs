@@ -125,8 +125,8 @@ namespace SavageExpenseTracker.Infrastructure.Tests
             await _context.Friendships.AddAsync(new Friendship { UserId = userId, FriendId = friend3, Status = "pending" });
             await _context.SaveChangesAsync();
 
-            var result = await _repository.GetFriendsAsync(userId);
-            result.Should().HaveCount(2);
+            var (items, totalCount) = await _repository.GetFriendsAsync(userId, 1, 10);
+            items.Should().HaveCount(2);
         }
 
         [Fact]
@@ -149,8 +149,8 @@ namespace SavageExpenseTracker.Infrastructure.Tests
             await _context.Friendships.AddAsync(new Friendship { UserId = userId, FriendId = friend3, Status = "pending" }); // Not a request received by userId
             await _context.SaveChangesAsync();
 
-            var result = await _repository.GetPendingRequestsAsync(userId);
-            result.Should().HaveCount(1);
+            var (items, totalCount) = await _repository.GetPendingRequestsAsync(userId, 1, 10);
+            items.Should().HaveCount(1);
         }
     }
 }

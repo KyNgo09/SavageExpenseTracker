@@ -86,6 +86,7 @@ builder.Services.AddScoped<IChallengeService, ChallengeService>();
 builder.Services.AddScoped<IChallengeNotificationService, ChallengeNotificationService>();
 builder.Services.AddHostedService<ChallengeClosingJob>();
 builder.Services.AddScoped<IFriendshipService, FriendshipService>();
+builder.Services.AddScoped<IPhotoService, CloudinaryPhotoService>();
 
 // Register TokenService
 builder.Services.AddScoped<ITokenService, TokenService>();

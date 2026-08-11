@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SavageExpenseTracker.Application.Constants;
 using SavageExpenseTracker.Application.Dtos;
-using SavageExpenseTracker.Application.Interfaces;
 using SavageExpenseTracker.Application.Dtos.User;
+using SavageExpenseTracker.Application.Interfaces;
 using SavageExpenseTracker.WebApi.Extensions;
 
 namespace SavageExpenseTracker.WebApi.Controllers
@@ -16,14 +18,10 @@ namespace SavageExpenseTracker.WebApi.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IUserService _userService;
-        private readonly ITokenService _tokenService;
-        private readonly IUserRepository _userRepository;
 
-        public UsersController(IUserService userService, ITokenService tokenService, IUserRepository userRepository)
+        public UsersController(IUserService userService)
         {
             _userService = userService;
-            _tokenService = tokenService;
-            _userRepository = userRepository;
         }
 
         // GET: api/users?pageNumber=1&pageSize=10
@@ -58,29 +56,15 @@ namespace SavageExpenseTracker.WebApi.Controllers
 
         // POST: api/users/login
         [HttpPost("login")]
-        public async Task<ActionResult<UserDto>> Login(LoginDto loginDto)
+        public async Task<ActionResult<TokenResponseDto>> Login(LoginDto loginDto)
         {
-            var userDto = await _userService.AuthenticateAsync(loginDto);
-            if (userDto == null)
+            var tokenResponse = await _userService.LoginAsync(loginDto);
+            if (tokenResponse == null)
             {
-                return Unauthorized(new { Message = "Invalid Email or Password"});
+                return Unauthorized(new { Message = "Invalid Email or Password" });
             }
 
-            var userEntity = await _userRepository.GetByIdAsync(userDto.Id);
-            if (userEntity == null) return BadRequest(new { Message = "User not found" });
-
-            var accessToken = _tokenService.GenerateAccessToken(userEntity);
-            var refreshToken = _tokenService.GenerateRefreshToken();
-
-            userEntity.RefreshToken = refreshToken;
-            userEntity.RefreshTokenExpiryDate = DateTime.UtcNow.AddDays(7);
-            await _userRepository.UpdateAsync(userEntity);
-
-            return Ok(new TokenResponseDto
-            {
-                AccessToken = accessToken,
-                RefreshToken = refreshToken
-            });
+            return Ok(tokenResponse);
         }
 
         // POST: api/users/refresh-token
@@ -89,45 +73,15 @@ namespace SavageExpenseTracker.WebApi.Controllers
         {
             if (tokenApiModel is null) return BadRequest("Invalid client request");
 
-            string accessToken = tokenApiModel.AccessToken;
-            string refreshToken = tokenApiModel.RefreshToken;
-
-            ClaimsPrincipal principal;
-            try
-            {
-                principal = _tokenService.GetPrincipalFromExpiredToken(accessToken);
-            }
-            catch
-            {
-                return BadRequest(new { Message = "Invalid access token or refresh" });
-            }
-
-            var userIdString = principal.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (!Guid.TryParse(userIdString, out Guid userId))
-                return BadRequest(new { Message = "Invalid Token "});
-
-            var user = await _userRepository.GetByIdAsync(userId);
-
-            if (user == null || user.RefreshToken != refreshToken || user.RefreshTokenExpiryDate <= DateTime.UtcNow)
+            var tokenResponse = await _userService.RefreshTokenAsync(tokenApiModel);
+            if (tokenResponse == null)
             {
                 return BadRequest(new { Message = "Invalid client request or Refresh Token has expired" });
             }
 
-            var newAccessToken = _tokenService.GenerateAccessToken(user);
-            var newRefreshToken = _tokenService.GenerateRefreshToken();
-
-            user.RefreshToken = newRefreshToken;
-            user.RefreshTokenExpiryDate = DateTime.UtcNow.AddDays(7);
-            await _userRepository.UpdateAsync(user);
-
-            return Ok(new TokenResponseDto
-            {
-                AccessToken = newAccessToken,
-                RefreshToken = newRefreshToken
-            });
+            return Ok(tokenResponse);
         }
-        
+
         // POST: api/users/change-password/{id}
         [HttpPost("change-password/{id}")]
         [Authorize]
@@ -153,7 +107,7 @@ namespace SavageExpenseTracker.WebApi.Controllers
         {
             if (string.IsNullOrWhiteSpace(email))
             {
-                return BadRequest(new { Message = "Email can't be empty!"});
+                return BadRequest(new { Message = "Email can't be empty!" });
             }
             var pagedUsers = await _userService.SearchUserByEmailAsync(email, pageNumber, pageSize);
             return Ok(pagedUsers);
@@ -201,6 +155,35 @@ namespace SavageExpenseTracker.WebApi.Controllers
                 return NotFound(new { Message = $"Can't delete user with ID: {id}" });
             }
             return NoContent();
+        }
+
+        // POST: api/users/me/avatar
+        [HttpPost("me/avatar")]
+        [Authorize]
+        public async Task<ActionResult<UserDto>> UploadAvatar(IFormFile file, [FromServices] IPhotoService photoService)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest(new { Message = "Please select an image file for avatar!" });
+
+            if (file.Length > 5 * 1024 * 1024)
+                return BadRequest(new { Message = "Avatar file size must not exceed 5 MB!" });
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+            var extension = System.IO.Path.GetExtension(file.FileName).ToLowerInvariant();
+
+            if (string.IsNullOrEmpty(extension) || !allowedExtensions.Contains(extension) || !file.ContentType.StartsWith("image/"))
+            {
+                return BadRequest(new { Message = "Invalid image file format! Only JPG, JPEG, PNG, and WEBP images are allowed." });
+            }
+
+            using var stream = file.OpenReadStream();
+            var avatarUrl = await photoService.UploadPhotoAsync(stream, file.FileName, PhotoFolders.UserAvatars);
+
+            var updatedUser = await _userService.UpdateAvatarAsync(User.GetUserId(), avatarUrl);
+            if (updatedUser == null)
+                return NotFound(new { Message = "User not found!" });
+
+            return Ok(updatedUser);
         }
     }
 }

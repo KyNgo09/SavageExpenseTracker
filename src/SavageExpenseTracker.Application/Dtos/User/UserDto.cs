@@ -8,6 +8,7 @@ namespace SavageExpenseTracker.Application.Dtos.User
         public string Email { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;
         public decimal HourlyRate { get; set; }
+        public string? AvatarUrl { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 }
