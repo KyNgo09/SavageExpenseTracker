@@ -81,31 +81,6 @@ var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING"
 builder.Services.AddDbContext<SavageExpenseTrackerDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-// Configure JwtOptions
-builder.Services.Configure<JwtOptions>(options =>
-{
-    options.SecretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") 
-                       ?? DotNetEnv.Env.GetString("JWT_SECRET_KEY") ?? string.Empty;
-    options.Issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") 
-                    ?? DotNetEnv.Env.GetString("JWT_ISSUER") ?? string.Empty;
-    options.Audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") 
-                     ?? DotNetEnv.Env.GetString("JWT_AUDIENCE") ?? string.Empty;
-});
-
-// Configure CloudinaryOptions
-builder.Services.Configure<CloudinaryOptions>(options =>
-{
-    options.CloudName = Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME") 
-                       ?? DotNetEnv.Env.GetString("CLOUDINARY_CLOUD_NAME") 
-                       ?? builder.Configuration["Cloudinary:CloudName"] ?? string.Empty;
-    options.ApiKey = Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY") 
-                    ?? DotNetEnv.Env.GetString("CLOUDINARY_API_KEY") 
-                    ?? builder.Configuration["Cloudinary:ApiKey"] ?? string.Empty;
-    options.ApiSecret = Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET") 
-                       ?? DotNetEnv.Env.GetString("CLOUDINARY_API_SECRET") 
-                       ?? builder.Configuration["Cloudinary:ApiSecret"] ?? string.Empty;
-});
-
 // Register Infrastructure & Application services
 builder.Services.AddSignalR();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
@@ -126,16 +101,69 @@ builder.Services.AddHostedService<ChallengeClosingJob>();
 builder.Services.AddScoped<IFriendshipService, FriendshipService>();
 builder.Services.AddScoped<IPhotoService, CloudinaryPhotoService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddSingleton<ISavageCommentQueue, SavageCommentQueue>();
+builder.Services.AddHttpClient<ISavageAiService, SavageAiService>();
+builder.Services.AddHostedService<SavageCommentBackgroundWorker>();
 
-// Configure JWT authentication
+// Configure JwtOptions
+builder.Services.Configure<JwtOptions>(options =>
+{
+    options.SecretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") 
+                       ?? DotNetEnv.Env.GetString("JWT_SECRET_KEY") 
+                       ?? builder.Configuration["Jwt:SecretKey"] ?? string.Empty;
+    options.Issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") 
+                    ?? DotNetEnv.Env.GetString("JWT_ISSUER") 
+                    ?? builder.Configuration["Jwt:Issuer"] ?? string.Empty;
+    options.Audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") 
+                     ?? DotNetEnv.Env.GetString("JWT_AUDIENCE") 
+                     ?? builder.Configuration["Jwt:Audience"] ?? string.Empty;
+});
+
+// Configure CloudinaryOptions
+builder.Services.Configure<CloudinaryOptions>(options =>
+{
+    options.CloudName = Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME") 
+                       ?? DotNetEnv.Env.GetString("CLOUDINARY_CLOUD_NAME") 
+                       ?? builder.Configuration["Cloudinary:CloudName"] ?? string.Empty;
+    options.ApiKey = Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY") 
+                    ?? DotNetEnv.Env.GetString("CLOUDINARY_API_KEY") 
+                    ?? builder.Configuration["Cloudinary:ApiKey"] ?? string.Empty;
+    options.ApiSecret = Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET") 
+                       ?? DotNetEnv.Env.GetString("CLOUDINARY_API_SECRET") 
+                       ?? builder.Configuration["Cloudinary:ApiSecret"] ?? string.Empty;
+});
+
+// Configure AiOptions
+builder.Services.Configure<AiOptions>(options =>
+{
+    options.ApiKey = Environment.GetEnvironmentVariable("AI_API_KEY") 
+                    ?? DotNetEnv.Env.GetString("AI_API_KEY") 
+                    ?? builder.Configuration["Ai:ApiKey"] ?? string.Empty;
+    options.Model = Environment.GetEnvironmentVariable("AI_MODEL") 
+                   ?? DotNetEnv.Env.GetString("AI_MODEL") 
+                   ?? builder.Configuration["Ai:Model"] ?? string.Empty;
+    options.ApiUrl = Environment.GetEnvironmentVariable("AI_API_URL") 
+                    ?? DotNetEnv.Env.GetString("AI_API_URL") 
+                    ?? builder.Configuration["Ai:ApiUrl"] ?? string.Empty;
+    options.FallbackModels = Environment.GetEnvironmentVariable("AI_FALLBACK_MODELS") 
+                            ?? DotNetEnv.Env.GetString("AI_FALLBACK_MODELS") 
+                            ?? builder.Configuration["Ai:FallbackModels"] ?? string.Empty;
+});
+
+// Read JWT variables for Authentication Middleware
 var jwtSecretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") 
-                   ?? DotNetEnv.Env.GetString("JWT_SECRET_KEY")
+                   ?? DotNetEnv.Env.GetString("JWT_SECRET_KEY") 
+                   ?? builder.Configuration["Jwt:SecretKey"] 
                    ?? throw new InvalidOperationException("JWT_SECRET_KEY environment variable is not set.");
+
 var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") 
-                 ?? DotNetEnv.Env.GetString("JWT_ISSUER")
+                 ?? DotNetEnv.Env.GetString("JWT_ISSUER") 
+                 ?? builder.Configuration["Jwt:Issuer"] 
                  ?? throw new InvalidOperationException("JWT_ISSUER environment variable is not set.");
+
 var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") 
-                   ?? DotNetEnv.Env.GetString("JWT_AUDIENCE")
+                   ?? DotNetEnv.Env.GetString("JWT_AUDIENCE") 
+                   ?? builder.Configuration["Jwt:Audience"] 
                    ?? throw new InvalidOperationException("JWT_AUDIENCE environment variable is not set.");
 
 builder.Services.AddAuthentication(options =>

@@ -16,12 +16,14 @@ namespace SavageExpenseTracker.Application.Services
         private readonly IExpenseRepository _expenseRepository;
         private readonly IUserRepository _userRepository;
         private readonly IPhotoService _photoService;
+        private readonly ISavageCommentQueue _savageCommentQueue;
 
-        public ExpenseService(IExpenseRepository expenseRepository, IUserRepository userRepository, IPhotoService photoService)
+        public ExpenseService(IExpenseRepository expenseRepository, IUserRepository userRepository, IPhotoService photoService, ISavageCommentQueue savageCommentQueue)
         {
             _expenseRepository = expenseRepository;
             _userRepository = userRepository;
             _photoService = photoService;
+            _savageCommentQueue = savageCommentQueue;
         }
 
         public async Task<PagedResultDto<ExpenseDto>> GetUserExpensesAsync(Guid userId, int pageNumber, int pageSize)
@@ -68,6 +70,8 @@ namespace SavageExpenseTracker.Application.Services
             };
 
             await _expenseRepository.AddAsync(expense);
+            
+            _savageCommentQueue.Enqueue(expense.Id);
             return expense.ToDto();
         }
 

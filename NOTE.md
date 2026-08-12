@@ -3,10 +3,10 @@
 ---
 
 ### 🤖 1. Phân hệ Trợ lý ảo AI (Savage AI Assistant)
-- [ ] **Tích hợp Gemini API**: Viết `GeminiService` kết nối đến Google AI Studio REST API trong .NET 8.
-- [ ] **Prompt Engineering**: Thiết lập System Prompt định hình tính cách *"Bé Slime mỏ hỗn nhưng dễ thương"*.
-- [ ] **Background Job (Async Queue)**: Tạo `Channel<long>` / `IHostedService` sinh câu khịa ngầm sau khi lưu khoản chi tiêu để tránh làm nghẽn request người dùng.
-- [ ] **Cập nhật Savage Comment**: Tự động lưu kết quả câu khịa vào cột `SavageComment` trong CSDL.
+- [x] **Tích hợp Gemini API**: Viết `GeminiService` kết nối đến Google AI Studio REST API trong .NET 8.
+- [x] **Prompt Engineering**: Thiết lập System Prompt định hình tính cách *"Bé Slime mỏ hỗn nhưng dễ thương"*.
+- [x] **Background Job (Async Queue)**: Tạo `Channel<long>` / `IHostedService` sinh câu khịa ngầm sau khi lưu khoản chi tiêu để tránh làm nghẽn request người dùng.
+- [x] **Cập nhật Savage Comment**: Tự động lưu kết quả câu khịa vào cột `SavageComment` trong CSDL.
 
 ---
 

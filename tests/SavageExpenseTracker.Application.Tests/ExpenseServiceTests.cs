@@ -17,6 +17,7 @@ namespace SavageExpenseTracker.Application.Tests
         private readonly Mock<IExpenseRepository> _expenseRepositoryMock;
         private readonly Mock<IUserRepository> _userRepositoryMock;
         private readonly Mock<IPhotoService> _photoServiceMock;
+        private readonly Mock<ISavageCommentQueue> _savageCommentQueueMock;
         private readonly ExpenseService _expenseService;
 
         public ExpenseServiceTests()
@@ -24,7 +25,8 @@ namespace SavageExpenseTracker.Application.Tests
             _expenseRepositoryMock = new Mock<IExpenseRepository>();
             _userRepositoryMock = new Mock<IUserRepository>();
             _photoServiceMock = new Mock<IPhotoService>();
-            _expenseService = new ExpenseService(_expenseRepositoryMock.Object, _userRepositoryMock.Object, _photoServiceMock.Object);
+            _savageCommentQueueMock = new Mock<ISavageCommentQueue>(); 
+            _expenseService = new ExpenseService(_expenseRepositoryMock.Object, _userRepositoryMock.Object, _photoServiceMock.Object, _savageCommentQueueMock.Object);
         }
 
         [Fact]

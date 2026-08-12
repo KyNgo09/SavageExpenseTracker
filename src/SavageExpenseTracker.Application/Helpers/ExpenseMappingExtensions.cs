@@ -11,6 +11,7 @@ namespace SavageExpenseTracker.Application.Helpers
             {
                 Id = expense.Id,
                 UserId = expense.UserId,
+                CategoryId = expense.CategoryId,
                 Description = expense.Description,
                 Amount = expense.Amount,
                 ImageUrl = expense.ImageUrl,
